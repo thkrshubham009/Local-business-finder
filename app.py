@@ -13,19 +13,20 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Clean SaaS Styling ---
+# --- Clean SaaS Styling & UI Polish ---
 st.markdown("""
     <style>
     .stApp {
         background-color: #0F172A !important;
-        color: #111827;
+        color: #F8FAFC !important;
     }
     .main .block-container {
         background-color: #0F172A;
-        color: #111827;
+        color: #F8FAFC;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         padding-top: 2rem;
         padding-bottom: 2rem;
+        max-width: 1200px;
     }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
         color: #FFFFFF !important;
@@ -36,31 +37,32 @@ st.markdown("""
         color: #F8FAFC !important;
     }
     .roadmap-container, div[data-testid="stForm"] {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E2E8F0;
+        background-color: #1E293B !important;
+        border: 1px solid #334155;
         border-radius: 12px;
         padding: 32px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
         margin-bottom: 24px;
+        color: #F8FAFC !important;
     }
     .roadmap-container h1, .roadmap-container h2, .roadmap-container h3, .roadmap-container h4, .roadmap-container h5, .roadmap-container h6 {
-        color: #111827 !important;
-        border-bottom: 1px solid #F1F5F9;
-        padding-bottom: 8px;
+        color: #FFFFFF !important;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 10px;
         margin-top: 24px;
     }
     .roadmap-container p, .roadmap-container li, .roadmap-container span {
-        color: #6B7280 !important;
+        color: #CBD5E1 !important;
     }
     .roadmap-container strong {
-        color: #111827 !important;
+        color: #F8FAFC !important;
     }
     div[data-testid="stForm"] label {
-        color: #111827 !important;
+        color: #F8FAFC !important;
         font-weight: 600 !important;
     }
     div[data-testid="stForm"] p, div[data-testid="stForm"] span {
-        color: #111827 !important;
+        color: #CBD5E1 !important;
     }
     .stButton > button, 
     div[data-testid="stFormSubmitButton"] > button, 
@@ -68,13 +70,13 @@ st.markdown("""
     button {
         background-color: #2563EB !important;
         color: #FFFFFF !important;
-        border-radius: 8px;
-        font-weight: 600;
-        padding: 0.6rem 1.2rem;
-        min-height: 48px;
-        border: none !important;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-        transition: background-color 0.2s ease;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        padding: 0.6rem 1.2rem !important;
+        min-height: 48px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        transition: all 0.2s ease;
         opacity: 1 !important;
         visibility: visible !important;
         width: 100%;
@@ -92,19 +94,38 @@ st.markdown("""
     div[data-testid="stDownloadButton"] > button:hover,
     button:hover {
         background-color: #1D4ED8 !important;
-        color: #FFFFFF !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.3);
     }
     input, select, textarea {
-        background-color: #FFFFFF !important;
-        color: #111827 !important;
-        border: 1px solid #D1D5DB !important;
+        background-color: #0F172A !important;
+        color: #F8FAFC !important;
+        border: 1px solid #334155 !important;
         border-radius: 8px !important;
+        padding: 10px 14px !important;
     }
-    .nav-header {
+    input:focus, select:focus, textarea:focus {
+        border-color: #2563EB !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    /* Professional Navbar Styling */
+    .topnav-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0 1.5rem 0;
+        border-bottom: 1px solid #334155;
+        margin-bottom: 2rem;
+    }
+    .nav-brand {
         font-size: 1.25rem;
         font-weight: 800;
         letter-spacing: -0.05em;
         color: #FFFFFF;
+    }
+    .nav-links {
+        display: flex;
+        gap: 8px;
     }
     .dev-profile-card {
         background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
@@ -113,6 +134,10 @@ st.markdown("""
         padding: 40px;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         margin-top: 20px;
+    }
+    /* Radio and Selectbox polish */
+    div[data-testid="stRadio"] label {
+        color: #F8FAFC !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -127,27 +152,29 @@ if 'show_optional' not in st.session_state:
 def set_tab(tab_name):
     st.session_state.nav_tab = tab_name
 
-# --- Top Navigation Bar ---
-col1, col2, col3, col4, col5, col6 = st.columns([3, 1, 1, 1, 1, 1])
-with col1:
-    st.markdown("<div class='nav-header'>OpportunityOS</div>", unsafe_allow_html=True)
-with col2:
-    if st.button("Navigator", key="nav_home"):
-        set_tab("Landing")
-with col3:
-    if st.button("Career", key="nav_career"):
-        set_tab("Career Navigator")
-with col4:
-    if st.button("Opportunities", key="nav_opps"):
-        set_tab("Opportunity Finder")
-with col5:
-    if st.button("About", key="nav_about"):
-        set_tab("About")
-with col6:
-    if st.button("Resources", key="nav_resources"):
-        set_tab("Resources")
-
-st.markdown("<hr style='margin-top: 0; margin-bottom: 2rem; border-color: #334155;'>", unsafe_allow_html=True)
+# --- Professional Website-Style Navigation Bar ---
+st.markdown("<div class='topnav-container'>", unsafe_allow_html=True)
+col_brand, col_nav = st.columns([2, 5])
+with col_brand:
+    st.markdown("<div class='nav-brand'>OpportunityOS</div>", unsafe_allow_html=True)
+with col_nav:
+    nc1, nc2, nc3, nc4, nc5 = st.columns(5)
+    with nc1:
+        if st.button("Navigator", key="nav_home"):
+            set_tab("Landing")
+    with nc2:
+        if st.button("Career", key="nav_career"):
+            set_tab("Career Navigator")
+    with nc3:
+        if st.button("Opportunities", key="nav_opps"):
+            set_tab("Opportunity Finder")
+    with nc4:
+        if st.button("About", key="nav_about"):
+            set_tab("About")
+    with nc5:
+        if st.button("Resources", key="nav_resources"):
+            set_tab("Resources")
+st.markdown("</div>", unsafe_allow_html=True)
 
 # --- About Tab Content ---
 if st.session_state.nav_tab == "About":
@@ -522,17 +549,17 @@ if st.session_state.nav_tab == "Career Navigator":
             st.markdown("#### Provide Background for Career Matching")
             c1, c2 = st.columns(2)
             with c1:
-                c_age = st.text_input("Age")
-                c_edu = st.text_input("Education Level")
-                c_fav = st.text_text_input = st.text_input("Favourite Subjects") if hasattr(st, 'text_input') else st.text_input("Favourite Subjects")
-                c_interests = st.text_input("Interests")
-                c_hobbies = st.text_input("Hobbies")
+                c_age = st.text_input("Age", placeholder="Enter age...")
+                c_edu = st.text_input("Education Level", placeholder="Enter education...")
+                c_fav = st.text_input("Favourite Subjects", placeholder="Enter subjects...")
+                c_interests = st.text_input("Interests", placeholder="Enter interests...")
+                c_hobbies = st.text_input("Hobbies", placeholder="Enter hobbies...")
             with c2:
-                c_strengths = st.text_input("Strengths")
-                c_weaknesses = st.text_input("Weaknesses")
-                c_personality = st.text_input("Personality")
-                c_workstyle = st.text_input("Preferred Work Style")
-                c_country = st.text_input("Preferred Country (Optional)")
+                c_strengths = st.text_input("Strengths", placeholder="Enter strengths...")
+                c_weaknesses = st.text_input("Weaknesses", placeholder="Enter weaknesses...")
+                c_personality = st.text_input("Personality", placeholder="Enter personality...")
+                c_workstyle = st.text_input("Preferred Work Style", placeholder="Enter work style...")
+                c_country = st.text_input("Preferred Country (Optional)", placeholder="Enter country...")
                 
             submitted_choice = st.form_submit_button("Recommend Careers")
             
