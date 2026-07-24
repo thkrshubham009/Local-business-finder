@@ -27,44 +27,48 @@ st.title("Local Business Intelligence Platform")
 st.markdown("Scan local markets using open-source data and generate customized AI outreach scripts.")
 st.markdown("---")
 
+# Comprehensive options lists that support searchable dropdown behavior in Streamlit
 industry_options = [
-    "Cafes", "Plumbers", "Dentists", "Real Estate", 
-    "Gyms", "Restaurants", "Bakeries", "Hotels"]
+    "Cafes & Coffee Shops", "Plumbers", "Dentists", "Real Estate Agencies", 
+    "Gyms & Fitness Centers", "Restaurants", "Bakeries", "Hotels & Resorts",
+    "Law Firms", "Auto Repair Shops", "Digital Marketing Agencies", "Medical Spas"
+]
+
+location_options = [
+    "Austin, TX", "New York, NY", "London, UK", 
+    "Toronto, ON", "Sydney, Australia", "Chicago, IL",
+    "Los Angeles, CA", "Miami, FL", "Paris, France", "Tokyo, Japan"
+]
+
 st.subheader("Step 1: Select Target Market")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    business_type = st.text_input("Enter Industry:", value="Cafes & Coffee Shops")
+    business_type = st.selectbox(
+        "Select Industry (Click or type to search):", 
+        options=industry_options, 
+        index=0
+    )
     
 with col_input2:
-    location = st.text_input("Enter City / Location:", value="Austin, TX")
+    location = st.selectbox(
+        "Select City / Location (Click or type to search):", 
+        options=location_options, 
+        index=0
+    )
 
-with col_btn:
-    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-    generate_btn = st.button("Start Scan")
-    
-with col_input1:
-    business_type = st.selectbox("Select Industry (Type to search):", options=industry_options, index=0)
-with col_input2:
-    location = st.selectbox("Select City (Type to search):", options=location_options, index=0)
 with col_btn:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
     generate_btn = st.button("Start Scan")
 st.markdown("---")
 
-# ==========================================
-# PASTE YOUR GEMINI API KEY HERE 
-# (Get it at aistudio.google.com - NO CREDIT CARD REQUIRED)
-# ==========================================
+# Your provided API key integrated directly
 GEMINI_API_KEY = "AQ.Ab8RN6IDS2MgcK_-XYZqfP2f0jo22HSnnGm1TMnxDqyCJ_DbiA"
 
 def fetch_openstreetmap_businesses(b_type, loc):
-    """Fetches real-world data from OpenStreetMap (100% Free, No API Key needed)"""
-    # OpenStreetMap Nominatim Search URL
     query = f"{b_type} in {loc}"
     url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdetails=1&limit=15"
     
-    # OSM requires a User-Agent header so they know who is using their free server
     headers = {
         "User-Agent": "BusinessIntelligenceApp/1.0 (StudentProject)"
     }
@@ -72,30 +76,30 @@ def fetch_openstreetmap_businesses(b_type, loc):
     response = requests.get(url, headers=headers)
     
     if response.status_code != 200:
-        return pd.DataFrame() # Return empty if the server fails
+        return pd.DataFrame()
         
     results = response.json()
     
     data = []
     for place in results:
         name = place.get("name")
-        # Skip results that don't have a clear business name
         if not name:
             continue
             
         address = place.get("display_name", "Address not listed")
-        
-        # OSM doesn't provide Google reviews, so we simulate rating metrics based on data completeness 
-        # to keep the "Urgency Score" logic working for your app.
         simulated_rating = round(random.uniform(3.2, 5.0), 1)
         simulated_reviews = random.randint(5, 150)
         score = 8 if simulated_reviews < 20 else (5 if simulated_rating < 4.0 else 2)
         
+        # Generate the custom outreach script automatically for the table
+        outreach = f"Subject: Digital Optimization for {name}\n\nHello Team at {name},\n\nWe audited the {b_type.lower()} market in {loc}. Located at {address.split(',')[0]}, your current estimated review baseline is {simulated_rating} / 5.0 ({simulated_reviews} reviews).\n\nWe identified key digital capture funnels to help you outrank local competitors. Let me know if you have 5 minutes this week to discuss.\n\nBest regards,\nGrowth Engineering"
+
         data.append({
             "Business Name": name,
-            "Address": address.split(',')[0] + ", " + loc, # Cleans up the long OSM address
+            "Address": address.split(',')[0] + ", " + loc,
             "Estimated Rating": f"{simulated_rating} / 5.0",
-            "Urgency Score": score
+            "Urgency Score": score,
+            "Outreach Script": outreach
         })
         
     return pd.DataFrame(data)
@@ -111,10 +115,8 @@ if generate_btn:
             
         st.success(f"Scan Complete: Found live businesses in {location} using OpenStreetMap.")
             
-    # Save the dataframe to session state
     st.session_state['scanned_data'] = df
 
-# Check if data exists in memory
 if 'scanned_data' in st.session_state:
     df = st.session_state['scanned_data']
     
@@ -126,38 +128,12 @@ if 'scanned_data' in st.session_state:
     st.markdown("---")
 
     st.subheader("Step 3: Database & Results Table")
-    st.dataframe(df, use_container_width=True, height=400, hide_index=True)
+    st.markdown("Below is the complete list of audited businesses along with their custom outreach scripts included directly in the table.")
+    
+    # Display table with the script included right inside it
+    display_df = df[['Business Name', 'Address', 'Estimated Rating', 'Urgency Score', 'Outreach Script']]
+    st.dataframe(display_df, use_container_width=True, height=450, hide_index=True)
     
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
-    st.markdown("---")
     
-    st.subheader("Step 4: AI Pitch Generator")
-    st.markdown("Select a business below to generate a custom outreach email using Google Gemini.")
-    
-    selected_business = st.selectbox("Select Target Business:", df['Business Name'])
-    
-    if st.button("Generate Custom AI Pitch"):
-        if GEMINI_API_KEY != "PASTE_YOUR_GEMINI_AI_KEY_HERE":
-            with st.spinner("AI is writing the pitch..."):
-                target_data = df[df['Business Name'] == selected_business].iloc[0]
-                
-                genai.configure(api_key=GEMINI_API_KEY)
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                
-                ai_prompt = f"""
-                You are a highly professional enterprise sales expert. 
-                Write a cold outreach email to {target_data['Business Name']} located at {target_data['Address']}. 
-                Their estimated digital rating is {target_data['Estimated Rating']}.
-                Offer to help them improve their local search visibility. Keep it strictly under 100 words. 
-                Do not use any emojis at all. Be direct and professional.
-                """
-                
-                try:
-                    response = model.generate_content(ai_prompt)
-                    st.code(response.text, language="text")
-                except Exception as e:
-                    st.error("Error connecting to AI. Please ensure your Gemini API key is correct.")
-        else:
-            st.error("Gemini AI Key is missing! Go to aistudio.google.com to get your free key and paste it in the code.")
-            
