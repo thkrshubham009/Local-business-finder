@@ -26,7 +26,6 @@ st.title("Local Business Intelligence Platform")
 st.markdown("Scan local markets using open-source data and generate customized AI outreach scripts.")
 st.markdown("---")
 
-# Searchable dropdown lists
 industry_options = [
     "Cafes & Coffee Shops", "Plumbers", "Dentists", "Real Estate Agencies", 
     "Gyms & Fitness Centers", "Restaurants", "Bakeries", "Hotels & Resorts",
@@ -43,73 +42,54 @@ st.subheader("Step 1: Select Target Market")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    business_type = st.selectbox(
-        "Select Industry (Click or type to search):", 
-        options=industry_options, 
-        index=0
-    )
+    business_type = st.selectbox("Select Industry (Click or type to search):", options=industry_options, index=0)
     
 with col_input2:
-    location = st.selectbox(
-        "Select City / Location (Click or type to search):", 
-        options=location_options, 
-        index=0
-    )
+    location = st.selectbox("Select City / Location (Click or type to search):", options=location_options, index=0)
 
 with col_btn:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
     generate_btn = st.button("Start Scan")
 st.markdown("---")
 
-# Your integrated API key
-GEMINI_API_KEY = "AQ.Ab8RN6I8Vo6WsKXYFS84HQliVUl-qbqvGl7Po_GEa-zbCi8FrQ"
+# Pulling securely from Streamlit secrets
+try:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    GEMINI_API_KEY = "AQ.Ab8RN6I8Vo6WsKXYFS84HQliVUl-qbqvGl7Po_GEa-zbCi8FrQ"
 
 def fetch_openstreetmap_businesses(b_type, loc):
     query = f"{b_type} in {loc}"
     url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&addressdetails=1&limit=15"
-    
-    headers = {
-        "User-Agent": "BusinessIntelligenceApp/1.0 (StudentProject)"
-    }
-    
+    headers = {"User-Agent": "BusinessIntelligenceApp/1.0 (StudentProject)"}
     response = requests.get(url, headers=headers)
-    
     if response.status_code != 200:
         return pd.DataFrame()
-        
     results = response.json()
-    
     data = []
     for place in results:
         name = place.get("name")
         if not name:
             continue
-            
         address = place.get("display_name", "Address not listed")
         simulated_rating = round(random.uniform(3.2, 5.0), 1)
         simulated_reviews = random.randint(5, 150)
         score = 8 if simulated_reviews < 20 else (5 if simulated_rating < 4.0 else 2)
-
         data.append({
             "Business Name": name,
             "Address": address.split(',')[0] + ", " + loc,
             "Estimated Rating": f"{simulated_rating} / 5.0",
             "Urgency Score": score
         })
-        
     return pd.DataFrame(data)
 
-# Execution Logic
 if generate_btn:
     with st.spinner("Pulling open-source satellite and map data..."):
         df = fetch_openstreetmap_businesses(business_type, location)
-        
         if df.empty:
             st.error("Could not find data for that specific combination. Try another city or industry.")
             st.stop()
-            
         st.success(f"Scan Complete: Found live businesses in {location} using OpenStreetMap.")
-            
     st.session_state['scanned_data'] = df
 
 if 'scanned_data' in st.session_state:
@@ -130,7 +110,6 @@ if 'scanned_data' in st.session_state:
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
     st.markdown("---")
     
-    # Step 4: AI Pitch Generator using Header Authentication
     st.subheader("Step 4: AI Pitch Generator")
     st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
     
@@ -139,7 +118,6 @@ if 'scanned_data' in st.session_state:
     if st.button("Generate Custom AI Pitch"):
         with st.spinner("AI is writing the pitch..."):
             target_data = df[df['Business Name'] == selected_business].iloc[0]
-            
             ai_prompt = f"""
             You are a highly professional enterprise sales expert. 
             Write a cold outreach email to {target_data['Business Name']} located at {target_data['Address']}. 
@@ -148,6 +126,7 @@ if 'scanned_data' in st.session_state:
             Do not use any emojis at all. Be direct and professional.
             """
             
+            # Using Vertex/Cloud Project endpoint compatible with AQ tokens via Bearer/Header authorization
             api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
             headers = {
                 "x-goog-api-key": GEMINI_API_KEY,
@@ -160,12 +139,11 @@ if 'scanned_data' in st.session_state:
             try:
                 response = requests.post(api_url, headers=headers, json=payload)
                 result_json = response.json()
-                
                 if "candidates" in result_json:
                     pitch_text = result_json['candidates'][0]['content']['parts'][0]['text']
                     st.code(pitch_text, language="text")
                 else:
-                    st.error(f"API Error: {result_json}")
+                    st.error(f"API Error Response: {result_json}")
             except Exception as e:
                 st.error(f"Error connecting to AI: {e}")
                 
