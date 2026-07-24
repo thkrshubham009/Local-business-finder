@@ -12,37 +12,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Professional Minimalist Styling (No Emojis, Clean SaaS UI) ---
+# --- Professional Minimalist Styling with High Contrast (Fixed Text Visibility) ---
 st.markdown("""
     <style>
     /* Global Styles */
     .main {
         background-color: #f8fafc;
-        color: #0f172a;
+        color: #111827;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     
-    /* Typography */
+    /* Typography - Ensuring high contrast dark text */
+    h1, h2, h3, h4, h5, h6, p, span, label, div {
+        color: #111827;
+    }
+    
     h1, h2, h3, h4, h5, h6 {
         font-weight: 700;
-        color: #0f172a;
         letter-spacing: -0.025em;
     }
     
-    /* Cards */
-    .stCard, div[data-testid="stVerticalBlock"] > div.element-container > div.stMarkdown {
-        background-color: #ffffff;
+    /* Cards - White background with dark readable text */
+    .stCard, div[data-testid="stVerticalBlock"] > div.element-container > div.stMarkdown, .roadmap-container {
+        background-color: #ffffff !important;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
         padding: 24px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         margin-bottom: 16px;
+        color: #111827 !important;
     }
     
-    /* Buttons */
+    /* Ensure markdown text inside containers is fully legible */
+    .stMarkdown p, .stMarkdown li, .stMarkdown span {
+        color: #334155 !important;
+    }
+
+    /* Buttons - Dark background with crisp white text */
     .stButton > button {
-        background-color: #0f172a;
-        color: #ffffff;
+        background-color: #0f172a !important;
+        color: #ffffff !important;
         border-radius: 8px;
         font-weight: 600;
         padding: 0.6rem 1.2rem;
@@ -51,18 +60,28 @@ st.markdown("""
         transition: background-color 0.2s ease;
     }
     .stButton > button:hover {
-        background-color: #1e293b;
-        color: #ffffff;
+        background-color: #1e293b !important;
+        color: #ffffff !important;
     }
     
-    /* Form Inputs */
-    .stTextInput > div > div > input, .stSelectbox > div > div > select, .stNumberInput > div > div > input, .stTextArea > div > div > textarea {
+    /* Form Inputs - Clean borders and dark text */
+    .stTextInput > div > div > input, 
+    .stSelectbox > div > div > select, 
+    .stNumberInput > div > div > input, 
+    .stTextArea > div > div > textarea {
         border-radius: 8px;
         border: 1px solid #cbd5e1;
-        background-color: #ffffff;
+        background-color: #ffffff !important;
+        color: #111827 !important;
+    }
+
+    /* Fix Streamlit labels and captions visibility */
+    .stTextInput label, .stSelectbox label, .stNumberInput label, .stTextArea label, .stMultiSelect label {
+        color: #1e293b !important;
+        font-weight: 600 !important;
     }
     
-    /* Navigation Bar simulation */
+    /* Navigation Bar styling */
     .nav-container {
         display: flex;
         justify-content: space-between;
@@ -90,7 +109,7 @@ def set_tab(tab_name):
 # --- Top Navigation Bar ---
 col1, col2, col3, col4 = st.columns([4, 1, 1, 1])
 with col1:
-    st.markdown("<span style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.05em;'>OpportunityOS</span>", unsafe_allow_html=True)
+    st.markdown("<span style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.05em; color: #0f172a;'>OpportunityOS</span>", unsafe_allow_html=True)
 with col2:
     if st.button("Navigator", key="nav_home"):
         set_tab("Landing")
@@ -279,8 +298,8 @@ if st.session_state.nav_tab == "Landing":
         st.markdown("## Your Personalized Opportunity Roadmap")
         st.markdown("Generated successfully based on your profile parameters.")
         
-        # Display the result inside a structured layout container
-        st.markdown("<div style='background-color: #ffffff; padding: 32px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);'>", unsafe_allow_html=True)
+        # Display the result inside a structured layout container with guaranteed high-contrast styling
+        st.markdown("<div class='roadmap-container'>", unsafe_allow_html=True)
         st.markdown(st.session_state.roadmap_result)
         st.markdown("</div>", unsafe_allow_html=True)
         
