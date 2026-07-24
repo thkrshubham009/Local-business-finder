@@ -203,7 +203,16 @@ def get_verified_gemini_client():
 
         # Ultimate fallback if listing is restricted or fails
         if not model_id:
-            model_id = "gemini-2.0-flash"
+            models = list(client.models.list())
+
+            for m in models:
+                name = m.name.split("/")[-1]
+                if "generateContent" in getattr(m, "supported_actions", []):
+                     model_id = name
+                     break
+
+            if not model_id:
+                raise Exception("No supported Gemini model found.")
             
         return client, model_id, None
     except Exception as e:
