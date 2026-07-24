@@ -22,19 +22,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("Global Business Intelligence Platform")
-st.markdown("Scan real-world global markets with public registry contact details via OpenStreetMap.")
+st.markdown("Scan real-world global markets with clean address formatting and free-form input.")
 st.markdown("---")
 
-industry_options = [
-    "Cafes & Coffee Shops", "Restaurants", "Hotels & Resorts", 
-    "Gyms & Fitness Centers", "Bakeries", "Dentists", "Pharmacies", "Supermarkets"
-]
-
-st.subheader("Step 1: Select Global Target Market")
+# Removed dropdown lists completely; using free text inputs for custom user needs
+st.subheader("Step 1: Custom Search Parameters")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    business_type = st.selectbox("Select Industry Category:", options=industry_options, index=0)
+    business_type = st.text_input("Enter Industry or Business Type:", value="Cafe")
     
 with col_input2:
     location = st.text_input("Enter Any City or Country Worldwide:", value="Austin, TX")
@@ -45,89 +41,46 @@ with col_btn:
 st.markdown("---")
 
 def fetch_global_businesses_with_contacts(b_type, loc):
-    tag_mapping = {
-        "Cafes & Coffee Shops": "cafe",
-        "Restaurants": "restaurant",
-        "Hotels & Resorts": "hotel",
-        "Gyms & Fitness Centers": "gym",
-        "Bakeries": "bakery",
-        "Dentists": "dentist",
-        "Pharmacies": "pharmacy",
-        "Supermarkets": "supermarket"
-    }
-    osm_tag = tag_mapping.get(b_type, "amenity")
-    
-    # Using Overpass API to query global map records including contact tags
-    overpass_url = "https://overpass-api.de/api/interpreter"
-    overpass_query = f"""
-    [out:json][timeout:25];
-    area[name="{loc.split(',')[0].strip()}"]->.searchArea;
-    (
-      node["amenity"="{osm_tag}"](area.searchArea);
-      way["amenity"="{osm_tag}"](area.searchArea);
-      node["shop"="{osm_tag}"](area.searchArea);
-      way["shop"="{osm_tag}"](area.searchArea);
-    );
-    out body;
-    >;
-    out skel qt;
-    """
+    # Fast Nominatim text search to resolve queries instantly without heavy timeouts
+    nominatim_url = f"https://nominatim.openstreetmap.org/search?q={b_type}+in+{loc}&format=json&addressdetails=1&extratags=1&limit=20"
+    headers = {"User-Agent": "GlobalBusinessIntelligence/1.0"}
     
     try:
-        response = requests.post(overpass_url, data={'data': overpass_query}, timeout=30)
-        
-        if response.status_code != 200 or not response.json().get("elements"):
-            # Fallback to Nominatim search with address details
-            nominatim_url = f"https://nominatim.openstreetmap.org/search?q={b_type}+in+{loc}&format=json&addressdetails=1&extratags=1&limit=25"
-            headers = {"User-Agent": "GlobalBusinessIntelligence/1.0"}
-            nom_response = requests.get(nominatim_url, headers=headers, timeout=15)
-            if nom_response.status_code == 200:
-                results = nom_response.json()
-                data = []
-                for place in results:
-                    name = place.get("name") or place.get("display_name", "").split(",")[0]
-                    address = place.get("display_name", "Global address mapped")
-                    extratags = place.get("extratags", {})
-                    phone = extratags.get("phone", extratags.get("contact:phone", "Not listed publicly"))
-                    website = extratags.get("website", extratags.get("contact:website", "Not listed"))
-                    
-                    data.append({
-                        "Business Name": name,
-                        "Address": address,
-                        "Phone Number": phone,
-                        "Website": website,
-                        "Urgency Score": 7
-                    })
-                return pd.DataFrame(data)
+        response = requests.get(nominatim_url, headers=headers, timeout=10)
+        if response.status_code != 200:
             return pd.DataFrame()
             
-        elements = response.json().get("elements", [])
+        results = response.json()
         data = []
         
-        for el in elements:
-            tags = el.get("tags", {})
-            name = tags.get("name")
-            if not name:
-                continue
-                
-            street = tags.get("addr:street", "")
-            housenumber = tags.get("addr:housenumber", "")
-            city = tags.get("addr:city", loc)
-            address = f"{housenumber} {street}, {city}".strip() if street else f"Mapped location in {loc}"
+        for place in results:
+            name = place.get("name") or place.get("display_name", "").split(",")[0]
             
-            # Extract real public contact tags if registered in the global map
-            phone = tags.get("phone", tags.get("contact:phone", "Not listed publicly"))
-            website = tags.get("website", tags.get("contact:website", "Not listed"))
+            # Proper address formatting parsing structured components cleanly
+            address_details = place.get("address", {})
+            road = address_details.get("road", "")
+            house_number = address_details.get("house_number", "")
+            suburb = address_details.get("suburb", address_details.get("neighbourhood", ""))
+            city_name = address_details.get("city", address_details.get("town", address_details.get("village", loc)))
+            country_name = address_details.get("country", "")
+            
+            # Construct a clean, readable single-line address format
+            address_parts = [p for p in [f"{house_number} {road}".strip(), suburb, city_name, country_name] if p]
+            formatted_address = ", ".join(address_parts) if address_parts else place.get("display_name", "Address mapped")
+            
+            extratags = place.get("extratags", {})
+            phone = extratags.get("phone", extratags.get("contact:phone", "Not listed publicly"))
+            website = extratags.get("website", extratags.get("contact:website", "Not listed"))
             
             data.append({
                 "Business Name": name,
-                "Address": address,
+                "Address": formatted_address,
                 "Phone Number": phone,
                 "Website": website,
                 "Urgency Score": 7
             })
             
-        return pd.DataFrame(data[:30])
+        return pd.DataFrame(data)
     except Exception:
         return pd.DataFrame()
 
@@ -136,7 +89,7 @@ if generate_btn:
         df = fetch_global_businesses_with_contacts(business_type, location)
         
         if df.empty:
-            st.error("No entries found for this location. Try a major city or broader region name.")
+            st.error("No entries found for this location. Try a different search term.")
             st.stop()
             
         st.success(f"Global Scan Complete: Pulled live entities for {location}.")
@@ -179,4 +132,4 @@ Would you be open to a brief 10-minute introduction this week?
 Best regards,
 Growth Strategist"""
         st.code(pitch_text, language="text")
-                                                                                                                                             
+        
