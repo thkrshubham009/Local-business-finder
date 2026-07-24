@@ -3,14 +3,13 @@ import random
 import requests
 import streamlit as st
 
-# Page Configuration - Enterprise SaaS Layout
+# Page Configuration
 st.set_page_config(
     page_title="Local Business Intelligence Platform",
-    page_icon=None,
     layout="wide"
 )
 
-# Custom CSS for modern executive SaaS UI
+# Custom CSS for a clean, distraction-free UI
 st.markdown("""
     <style>
     .main {
@@ -19,19 +18,18 @@ st.markdown("""
     h1, h2, h3 {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #0f172a;
-        letter-spacing: -0.025em;
         font-weight: 700;
     }
     
     .stButton>button {
         background-color: #0f172a;
         color: white;
-        border-radius: 6px;
-        padding: 0.55rem 1.25rem;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
         font-weight: 600;
         border: none;
         width: 100%;
-        transition: all 0.2s ease;
     }
     .stButton>button:hover {
         background-color: #1e293b;
@@ -39,24 +37,26 @@ st.markdown("""
     }
 
     div[data-testid="stMetricValue"] {
-        font-size: 1.8rem;
+        font-size: 2rem;
         color: #0f172a;
-        font-weight: 600;
+        font-weight: 700;
     }
     
+    /* Table Styling */
     .stDataFrame {
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Main Header Section
+# Main Title & Subtitle
 st.title("Local Business Intelligence Platform")
-st.markdown("Automated market scanning, demand analysis, and executive outreach generation.")
+st.markdown("Scan local markets, analyze performance, and view customized outreach scripts.")
 st.markdown("---")
 
-# Comprehensive Searchable Options Lists
+# Dropdown Options
 industry_options = [
     "Cafes & Coffee Shops", 
     "Plumbing & HVAC Services", 
@@ -70,7 +70,7 @@ industry_options = [
     "Boutique Hotels & Resorts",
     "Restaurants & Fine Dining",
     "Roofing & Construction",
-    "SLA & Medical Spas",
+    "Medical Spas",
     "Veterinary Clinics",
     "Accounting & CPA Firms"
 ]
@@ -92,30 +92,28 @@ location_options = [
     "Berlin, Germany"
 ]
 
-# Main Searchable Dropdown Inputs (Typing automatically filters options live)
-st.subheader("Market Audit Parameters")
+# Step 1: Select Input Parameters
+st.subheader("Step 1: Select Target Market")
 
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
     business_type = st.selectbox(
-        "Industry / Business Category", 
+        "Select Industry (Click or type to search):", 
         options=industry_options, 
-        index=0,
-        help="Type directly into the box to filter industries in real-time."
+        index=0
     )
     
 with col_input2:
     location = st.selectbox(
-        "Target Location / City", 
+        "Select City / Location (Click or type to search):", 
         options=location_options, 
-        index=0,
-        help="Type directly into the box to filter locations in real-time."
+        index=0
     )
 
 with col_btn:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-    generate_btn = st.button("Execute Audit")
+    generate_btn = st.button("Start Scan")
 
 st.markdown("---")
 
@@ -123,7 +121,7 @@ st.markdown("---")
 GOOGLE_API_KEY = "" 
 
 def fetch_real_google_businesses(b_type, loc, api_key):
-    """Fetches live real-world business data from Google Places API."""
+    """Fetches real-world business data from Google Places API."""
     query = f"{b_type} in {loc}"
     url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&key={api_key}"
     
@@ -140,14 +138,14 @@ def fetch_real_google_businesses(b_type, loc, api_key):
         has_gmb = place.get("business_status") == "OPERATIONAL"
         score = 8 if user_ratings_total < 20 else (5 if rating < 4.0 else 2)
         
-        outreach = f"Subject: Digital Optimization for {name}\n\nHello Team at {name},\n\nWe audited the {b_type.lower()} market in {loc}. Located at {address}, your current review baseline is {rating} ★ ({user_ratings_total} reviews). We identified key digital capture funnels to help you outrank local competitors.\n\nBest regards,\nGrowth Engineering"
+        outreach = f"Subject: Digital Optimization for {name}\n\nHello Team at {name},\n\nWe audited the {b_type.lower()} market in {loc}. Located at {address}, your current review baseline is {rating} out of 5 ({user_ratings_total} reviews). We identified key digital capture funnels to help you outrank local competitors.\n\nBest regards,\nGrowth Engineering"
 
         data.append({
             "Business Name": name,
-            "Address / Location": address,
+            "Address": address,
             "Rating Value": rating,
             "Review Count": user_ratings_total,
-            "Rating": f"{rating} ★ ({user_ratings_total})",
+            "Rating": f"{rating} / 5.0 ({user_ratings_total} reviews)",
             "Listing Status": "Verified" if has_gmb else "Unclaimed",
             "Urgency Score": score,
             "Outreach Script": outreach
@@ -180,10 +178,10 @@ def generate_mock_leads(b_type, loc):
 
         data.append({
             "Business Name": name,
-            "Address / Location": f"Central District, {loc}",
+            "Address": f"Central District, {loc}",
             "Rating Value": rating_val,
             "Review Count": review_cnt,
-            "Rating": f"{rating_val} ★ ({review_cnt})",
+            "Rating": f"{rating_val} / 5.0 ({review_cnt} reviews)",
             "Listing Status": "Verified" if has_gmb else "Unclaimed",
             "Urgency Score": score,
             "Outreach Script": outreach
@@ -194,24 +192,25 @@ def generate_mock_leads(b_type, loc):
 
 # Execution Logic
 if generate_btn:
-    with st.spinner("Executing market scan and calculating area demand metrics..."):
+    with st.spinner("Scanning market data..."):
         if GOOGLE_API_KEY.strip():
             df = fetch_real_google_businesses(business_type, location, GOOGLE_API_KEY)
-            st.success(f"LIVE Audit Complete: Retrieved real-world entities for {location}.")
+            st.success(f"Scan Complete: Found real businesses in {location}.")
         else:
             df = generate_mock_leads(business_type, location)
-            st.success(f"Audit Complete: Generated intelligence report for {location}.")
+            st.success(f"Scan Complete: Generated report for {location}.")
     
-    # Executive Metrics Summary
+    # Step 2: Overview Metrics
+    st.subheader("Step 2: Market Overview")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Records Audited", len(df))
-    col2.metric("Mean Urgency Index", f"{df['Urgency Score'].mean():.1f} / 10")
-    col3.metric("High-Priority Targets", len(df[df['Urgency Score'] >= 5]))
+    col1.metric("Businesses Audited", len(df))
+    col2.metric("Average Urgency Score", f"{df['Urgency Score'].mean():.1f} / 10")
+    col3.metric("High-Priority Opportunities", len(df[df['Urgency Score'] >= 5]))
     
     st.markdown("---")
     
-    # Market Demand & Top Performer Analysis
-    st.subheader("Market Demand & Local Competitor Intelligence")
+    # Market Intelligence Section
+    st.subheader("Market Leader & Demand Insights")
     
     top_performer = df.sort_values(by=['Rating Value', 'Review Count'], ascending=[False, False]).iloc[0]
     avg_rating = round(df['Rating Value'].mean(), 2)
@@ -220,41 +219,56 @@ if generate_btn:
     col_top1, col_top2 = st.columns(2, gap="large")
     
     with col_top1:
-        st.markdown(f"**Top Performing Entity in {location}:**")
-        st.info(f"🏆 **{top_performer['Business Name']}**\n\n"
-                f"• **Rating:** {top_performer['Rating Value']} Stars\n\n"
-                f"• **Total Customer Reviews:** {top_performer['Review Count']}\n\n"
-                f"• **Market Dominance:** High review density indicates strong brand trust and digital capture.")
+        st.markdown("**Best Performing Business:**")
+        st.info(f"Business: {top_performer['Business Name']}\n\n"
+                f"Rating: {top_performer['Rating Value']} / 5.0\n\n"
+                f"Total Customer Reviews: {top_performer['Review Count']}\n\n"
+                f"Status: Market Leader")
         
     with col_top2:
-        st.markdown(f"**AI Demand & Gap Analysis for {business_type}:**")
+        st.markdown("**Market Demand Analysis:**")
         
         if avg_rating >= 4.4:
-            demand_insight = f"High demand with intense competition. Consumers in {location} expect premium digital experiences. Pitching advanced scaling and automated review funnels will yield highest conversions."
+            demand_insight = f"Strong market demand with competitive providers in {location}. High opportunity to offer advanced performance tools."
         else:
-            demand_insight = f"High unmet demand. Average area rating is moderate ({avg_rating}/5.0). Businesses in this sector are struggling with customer retention, creating a prime opportunity for modernization services."
+            demand_insight = f"High demand with service gaps in {location}. Average rating is moderate ({avg_rating} / 5.0), creating opportunity for modernization."
             
-        st.warning(f"📊 **Sector Benchmark Metrics**\n\n"
-                   f"• **Regional Avg Rating:** {avg_rating} / 5.0\n\n"
-                   f"• **Total Area Search Reviews Analyzed:** {total_market_reviews}\n\n"
-                   f"• **Strategic Opportunity:** {demand_insight}")
+        st.warning(f"Average Market Rating: {avg_rating} / 5.0\n\n"
+                   f"Total Market Reviews Analyzed: {total_market_reviews}\n\n"
+                   f"Analysis: {demand_insight}")
 
     st.markdown("---")
 
-    # Table View (Includes Outreach Script Column Directly Inside Table)
-    st.subheader("Audited Business Intelligence Table")
-    display_df = df[['Business Name', 'Address / Location', 'Rating', 'Listing Status', 'Urgency Score', 'Outreach Script']]
-    st.dataframe(display_df, use_container_width=True, hide_index=True)
+    # Step 3: Clear & Wide Results Table
+    st.subheader("Step 3: Results Table")
+    st.markdown("Below is the complete list of audited businesses and their generated scripts.")
     
-    # Download CSV Button
+    # Clean display table configuration
+    display_df = df[['Business Name', 'Address', 'Rating', 'Listing Status', 'Urgency Score', 'Outreach Script']]
+    
+    st.dataframe(
+        display_df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Business Name": st.column_config.TextColumn("Business Name", width="medium"),
+            "Address": st.column_config.TextColumn("Address", width="medium"),
+            "Rating": st.column_config.TextColumn("Customer Rating", width="small"),
+            "Listing Status": st.column_config.TextColumn("Status", width="small"),
+            "Urgency Score": st.column_config.NumberColumn("Priority (1-10)", width="small"),
+            "Outreach Script": st.column_config.TextColumn("Outreach Script", width="large"),
+        }
+    )
+    
+    # CSV Download Button
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="Download Audit Report (CSV)",
+        label="Download Table as CSV",
         data=csv_data,
-        file_name=f"{business_type.lower().replace(' ', '_')}_audit_{location.lower().replace(', ', '_')}.csv",
+        file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv",
         mime="text/csv"
     )
 
 else:
-    st.info("Select or type parameters above and click Execute Audit to initialize data pipelines.")
-    
+    st.info("Select options above and click Start Scan to begin.")
+        
