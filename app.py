@@ -22,7 +22,6 @@ st.markdown("""
         font-weight: 700;
     }
     
-    /* Input & Button Alignments */
     .stButton>button {
         background-color: #0f172a;
         color: white;
@@ -56,29 +55,51 @@ st.title("Local Business Intelligence Platform")
 st.markdown("Automated market scanning, digital health assessment, and executive outreach generation.")
 st.markdown("---")
 
-# Main Page Audit Controls (Moved from Sidebar to Main Page)
+# Drop-down Options Lists
+business_options = [
+    "Cafes & Coffee Shops", 
+    "Plumbing & HVAC Services", 
+    "Dental & Medical Clinics", 
+    "Real Estate Agencies", 
+    "Fitness Centers & Gyms", 
+    "Boutique Hotels", 
+    "Law Firms"
+]
+
+location_options = [
+    "Austin, TX", 
+    "New York, NY", 
+    "Los Angeles, CA", 
+    "Chicago, IL", 
+    "Miami, FL", 
+    "London, UK", 
+    "Toronto, ON"
+]
+
+# Main Page Audit Controls (Drop-down selectors)
 st.subheader("Market Audit Parameters")
 
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    business_type = st.text_input("Industry / Business Type", value="Cafes")
+    business_type = st.selectbox("Select Business / Industry", options=business_options)
 with col_input2:
-    location = st.text_input("Target Location", value="Austin, TX")
+    location = st.selectbox("Select Target Location / Address Range", options=location_options)
 with col_btn:
-    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True) # Spacer to align button with text inputs
+    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True) # Alignment spacer
     generate_btn = st.button("Execute Audit")
 
 st.markdown("---")
 
 def generate_mock_leads(b_type, loc):
     """Simulates enterprise business data extraction and health scoring."""
+    clean_b_type = b_type.split(" & ")[0]
     fake_names = [
-        f"Apex {b_type.capitalize()}", 
-        f"Metro {b_type.capitalize()} Co.", 
-        f"Prime {loc.split(',')[0]} {b_type.capitalize()}", 
-        f"Urban {b_type.capitalize()} Group", 
-        f"Elite {b_type.capitalize()} Partners"
+        f"Apex {clean_b_type}", 
+        f"Metro {clean_b_type} Co.", 
+        f"Prime {loc.split(',')[0]} {clean_b_type}", 
+        f"Urban {clean_b_type} Group", 
+        f"Elite {clean_b_type} Partners"
     ]
     
     data = []
@@ -89,13 +110,13 @@ def generate_mock_leads(b_type, loc):
         # Calculate urgency score (1-10)
         score = 10 if not has_website and not has_gmb else (6 if not has_website else 2)
         
-        # Professional, multi-paragraph outreach script
+        # Executive outreach draft
         if score >= 8:
             outreach = f"""Subject: Digital Infrastructure Audit for {name} - Immediate Action Recommended
 
 Hello Team at {name},
 
-I am reaching out from our Growth Engineering division. We recently conducted an automated digital infrastructure scan of the {b_type} sector within the {loc} market. 
+I am reaching out from our Growth Engineering division. We recently conducted an automated digital infrastructure scan of the {b_type.lower()} sector within the {loc} market. 
 
 Our systems flagged {name} due to a missing centralized web presence and an unclaimed local search directory profile. In today's market, consumers rely heavily on digital discovery, meaning a substantial volume of highly qualified local traffic is currently being routed to fully optimized competitors in your area.
 
@@ -112,7 +133,7 @@ Growth Engineering Team"""
 
 Hello Team at {name},
 
-I hope this email finds you well. My team and I monitor digital touchpoints for local businesses, and while reviewing the {b_type} landscape in {loc}, we analyzed your current digital footprint.
+I hope this email finds you well. My team and I monitor digital touchpoints for local businesses, and while reviewing the {b_type.lower()} landscape in {loc}, we analyzed your current digital footprint.
 
 While {name} has established a baseline presence, we identified several notable optimization gaps—specifically regarding mobile search rendering and local conversion funnel friction. When potential clients search for your services on mobile devices, these technical friction points often result in high bounce rates and lost revenue.
 
@@ -165,17 +186,17 @@ if generate_btn:
     
     st.markdown("---")
     
-    # Excel Grid Format Table
-    st.subheader("Lead Database (Grid View)")
+    # Table View
+    st.subheader("Audited Entities Summary")
     display_df = df[['Business Name', 'Phone Number', 'Website Status', 'GMB Profile', 'Urgency Score']]
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
     # Download Button
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="Download Leads as CSV",
+        label="Download Audit Report (CSV)",
         data=csv_data,
-        file_name=f"{business_type.lower()}_leads_{location.lower().replace(', ', '_')}.csv",
+        file_name=f"{business_type.lower().replace(' ', '_')}_leads_{location.lower().replace(', ', '_')}.csv",
         mime="text/csv"
     )
 
@@ -192,5 +213,5 @@ if generate_btn:
         st.code(script_text, language="text")
 
 else:
-    st.info("Set target parameters above and click Execute Audit to initialize data pipelines.")
+    st.info("Select parameters above and click Execute Audit to initialize data pipelines.")
     
