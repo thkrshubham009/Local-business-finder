@@ -131,7 +131,7 @@ if 'scanned_data' in st.session_state:
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
     st.markdown("---")
     
-    # Step 4: AI Pitch Generator using official library handling
+    # Step 4: AI Pitch Generator using Vertex-compatible model identifier
     st.subheader("Step 4: AI Pitch Generator")
     st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
     
@@ -151,7 +151,8 @@ if 'scanned_data' in st.session_state:
             
             try:
                 genai.configure(api_key=GEMINI_API_KEY)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # Vertex AI compatible model path for AQ keys
+                model = genai.GenerativeModel('publishers/google/models/gemini-1.5-flash')
                 response = model.generate_content(ai_prompt)
                 st.code(response.text, language="text")
             except Exception as e:
