@@ -13,16 +13,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Clean SaaS Styling (Fixed button visibility, text readability, form buttons, and download button styling) ---
+# --- Clean SaaS Styling ---
 st.markdown("""
     <style>
-    /* Global App Background */
     .stApp {
         background-color: #0F172A !important;
         color: #111827;
     }
-    
-    /* Main Content Area Container */
     .main .block-container {
         background-color: #0F172A;
         color: #111827;
@@ -30,19 +27,14 @@ st.markdown("""
         padding-top: 2rem;
         padding-bottom: 2rem;
     }
-
-    /* Base Typography adjustments for dark canvas background */
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
         color: #FFFFFF !important;
         font-weight: 700;
         letter-spacing: -0.025em;
     }
-    
     .stMarkdown p, .stMarkdown span, .stMarkdown li {
         color: #F8FAFC !important;
     }
-
-    /* Cards - White background with dark primary and secondary text */
     .roadmap-container, div[data-testid="stForm"] {
         background-color: #FFFFFF !important;
         border: 1px solid #E2E8F0;
@@ -51,34 +43,25 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         margin-bottom: 24px;
     }
-
-    /* Typography inside white cards */
     .roadmap-container h1, .roadmap-container h2, .roadmap-container h3, .roadmap-container h4, .roadmap-container h5, .roadmap-container h6 {
         color: #111827 !important;
         border-bottom: 1px solid #F1F5F9;
         padding-bottom: 8px;
         margin-top: 24px;
     }
-
     .roadmap-container p, .roadmap-container li, .roadmap-container span {
         color: #6B7280 !important;
     }
-    
     .roadmap-container strong {
         color: #111827 !important;
     }
-
-    /* Form specific styles */
     div[data-testid="stForm"] label {
         color: #111827 !important;
         font-weight: 600 !important;
     }
-    
     div[data-testid="stForm"] p, div[data-testid="stForm"] span {
         color: #111827 !important;
     }
-
-    /* Universal Button Styling */
     .stButton > button, 
     div[data-testid="stFormSubmitButton"] > button, 
     div[data-testid="stDownloadButton"] > button,
@@ -96,7 +79,6 @@ st.markdown("""
         visibility: visible !important;
         width: 100%;
     }
-    
     .stButton > button *, 
     div[data-testid="stFormSubmitButton"] > button *, 
     div[data-testid="stDownloadButton"] > button *,
@@ -105,7 +87,6 @@ st.markdown("""
         opacity: 1 !important;
         fill: #FFFFFF !important;
     }
-
     .stButton > button:hover, 
     div[data-testid="stFormSubmitButton"] > button:hover, 
     div[data-testid="stDownloadButton"] > button:hover,
@@ -113,31 +94,18 @@ st.markdown("""
         background-color: #1D4ED8 !important;
         color: #FFFFFF !important;
     }
-    
-    .stButton > button:hover *, 
-    div[data-testid="stFormSubmitButton"] > button:hover *, 
-    div[data-testid="stDownloadButton"] > button:hover *,
-    button:hover * {
-        color: #FFFFFF !important;
-    }
-    
-    /* Inputs */
     input, select, textarea {
         background-color: #FFFFFF !important;
         color: #111827 !important;
         border: 1px solid #D1D5DB !important;
         border-radius: 8px !important;
     }
-
-    /* Navigation Header */
     .nav-header {
         font-size: 1.25rem;
         font-weight: 800;
         letter-spacing: -0.05em;
         color: #FFFFFF;
     }
-    
-    /* Developer Profile Card Styling */
     .dev-profile-card {
         background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
         border: 1px solid #334155;
@@ -175,7 +143,7 @@ with col4:
 
 st.markdown("<hr style='margin-top: 0; margin-bottom: 2rem; border-color: #334155;'>", unsafe_allow_html=True)
 
-# --- About Tab Content (Developer Profile) ---
+# --- About Tab Content ---
 if st.session_state.nav_tab == "About":
     st.markdown("## About the Developer")
     st.markdown("""
@@ -207,7 +175,7 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Verified Gemini Client & Model Integration (Google Gen AI SDK) ---
+# --- Official Google Gen AI SDK Client & Model Integration ---
 def get_verified_gemini_client():
     try:
         if "GEMINI_API_KEY" not in st.secrets:
@@ -217,24 +185,13 @@ def get_verified_gemini_client():
         if not api_key or api_key == "YOUR_API_KEY_HERE":
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
+        # Initialize standard Gen AI client using AI Studio key
         client = genai.Client(api_key=api_key)
         
-        # Dynamically discover or safely fallback to standard supported model identifiers for generate_content
-        model_candidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
-        selected_model = None
+        # Use standard officially documented current generation model identifier
+        model_id = 'gemini-2.0-flash'
         
-        for candidate in model_candidates:
-            try:
-                # Perform a quick verification check via list or direct assignment
-                selected_model = candidate
-                break
-            except Exception:
-                continue
-                
-        if not selected_model:
-            return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
-            
-        return client, selected_model, None
+        return client, model_id, None
     except Exception:
         return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
 
@@ -348,7 +305,6 @@ if st.session_state.nav_tab == "Landing":
         with st.form("profile_form"):
             st.markdown("#### Complete Your Profile")
             
-            # Required Fields (Visible Initially)
             c1, c2, c3 = st.columns(3)
             with c1:
                 age = st.text_input("Age", placeholder="Enter your age...")
@@ -364,12 +320,10 @@ if st.session_state.nav_tab == "Landing":
 
             submitted_main = st.form_submit_button("Generate My Roadmap")
             
-            # Optional Details Expander Toggle Button inside form flow
             if st.form_submit_button("Optional Details ▼" if not st.session_state.show_optional else "Optional Details ▲"):
                 st.session_state.show_optional = not st.session_state.show_optional
                 st.rerun()
 
-            # Optional Details Section
             skills = ""
             languages = ""
             certificates = ""
@@ -479,3 +433,4 @@ if st.session_state.nav_tab == "Landing":
                 del st.session_state.roadmap_result
                 st.session_state.show_optional = False
                 st.rerun()
+                    
