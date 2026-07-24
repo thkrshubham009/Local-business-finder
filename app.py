@@ -1,15 +1,16 @@
 import pandas as pd
 import random
+import requests
 import streamlit as st
 
-# Page Configuration - Clean, enterprise-grade, minimal styling
+# Page Configuration - Clean, enterprise-grade styling
 st.set_page_config(
-    page_title="Local Business Intelligence & Audit Platform",
+    page_title="Local Business Intelligence Platform",
     page_icon=None,
     layout="wide"
 )
 
-# Custom CSS for an expensive, enterprise SaaS look
+# Custom CSS for modern enterprise SaaS UI
 st.markdown("""
     <style>
     .main {
@@ -47,23 +48,33 @@ st.markdown("""
         border-radius: 8px;
         border: 1px solid #e2e8f0;
     }
+    
+    .demand-box {
+        background-color: #ffffff;
+        padding: 1.25rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # Main Header Section
 st.title("Local Business Intelligence Platform")
-st.markdown("Automated market scanning, digital health assessment, and executive outreach generation.")
+st.markdown("Automated market scanning, demand analysis, and executive outreach generation.")
 st.markdown("---")
 
-# Drop-down Options Lists
-business_options = [
+# Pre-populated options for quick search + allows custom typing
+industry_options = [
     "Cafes & Coffee Shops", 
     "Plumbing & HVAC Services", 
-    "Dental & Medical Clinics", 
+    "Dental Clinics", 
     "Real Estate Agencies", 
-    "Fitness Centers & Gyms", 
-    "Boutique Hotels", 
-    "Law Firms"
+    "Fitness Centers", 
+    "Law Firms",
+    "Bakeries",
+    "Auto Repair Shops",
+    "Digital Marketing Agencies"
 ]
 
 location_options = [
@@ -73,26 +84,90 @@ location_options = [
     "Chicago, IL", 
     "Miami, FL", 
     "London, UK", 
-    "Toronto, ON"
+    "Toronto, ON",
+    "Tokyo, Japan",
+    "Sydney, Australia"
 ]
 
-# Main Page Audit Controls (Drop-down selectors)
+# Main Page Search Inputs
 st.subheader("Market Audit Parameters")
 
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    business_type = st.selectbox("Select Business / Industry", options=business_options)
+    business_type = st.selectbox(
+        "Search or Select Industry", 
+        options=industry_options,
+        index=0
+    )
+    
 with col_input2:
-    location = st.selectbox("Select Target Location / Address Range", options=location_options)
+    location = st.selectbox(
+        "Search or Select Location / City", 
+        options=location_options,
+        index=0
+    )
+
 with col_btn:
-    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True) # Alignment spacer
+    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
     generate_btn = st.button("Execute Audit")
 
 st.markdown("---")
 
+# GOOGLE PLACES API KEY PLACEHOLDER
+GOOGLE_API_KEY = "" 
+
+def fetch_real_google_businesses(b_type, loc, api_key):
+    """Fetches live real-world business data from Google Places API."""
+    query = f"{b_type} in {loc}"
+    url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&key={api_key}"
+    
+    response = requests.get(url).json()
+    results = response.get("results", [])
+    
+    data = []
+    for place in results[:10]:
+        name = place.get("name")
+        address = place.get("formatted_address", loc)
+        rating = place.get("rating", 0.0)
+        user_ratings_total = place.get("user_ratings_total", 0)
+        
+        has_gmb = place.get("business_status") == "OPERATIONAL"
+        
+        score = 8 if user_ratings_total < 20 else (5 if rating < 4.0 else 2)
+        
+        outreach = f"""Subject: Strategic Digital Footprint Optimization for {name}
+
+Hello Leadership Team at {name},
+
+Our automated market analysis system recently reviewed the {b_type.lower()} market in {loc}.
+
+During our audit of {name} (located at {address}), we identified key growth opportunities to optimize your local search rankings and convert more online discovery traffic into direct calls.
+
+With an current review baseline of {rating} stars across {user_ratings_total} reviews, implementing an automated lead acquisition funnel will significantly outperform local category competitors.
+
+Would you be open to a 10-minute briefing this Thursday to review our detailed audit findings?
+
+Best regards,
+
+Growth Engineering Team"""
+
+        data.append({
+            "Business Name": name,
+            "Address / Location": address,
+            "Rating Value": rating,
+            "Review Count": user_ratings_total,
+            "Rating": f"{rating} ★ ({user_ratings_total})",
+            "Listing Status": "Verified" if has_gmb else "Unclaimed",
+            "Urgency Score": score,
+            "Outreach Template": outreach
+        })
+        
+    return pd.DataFrame(data)
+
+
 def generate_mock_leads(b_type, loc):
-    """Simulates enterprise business data extraction and health scoring."""
+    """Fallback simulation mode when no API key is set."""
     clean_b_type = b_type.split(" & ")[0]
     fake_names = [
         f"Apex {clean_b_type}", 
@@ -106,21 +181,20 @@ def generate_mock_leads(b_type, loc):
     for name in fake_names:
         has_website = random.choice([True, False])
         has_gmb = random.choice([True, False])
-        
-        # Calculate urgency score (1-10)
         score = 10 if not has_website and not has_gmb else (6 if not has_website else 2)
         
-        # Executive outreach draft
-        if score >= 8:
-            outreach = f"""Subject: Digital Infrastructure Audit for {name} - Immediate Action Recommended
+        rating_val = round(random.uniform(3.5, 4.9), 1)
+        review_cnt = random.randint(15, 340)
+        
+        outreach = f"""Subject: Digital Infrastructure Audit for {name} - Immediate Action Recommended
 
 Hello Team at {name},
 
 I am reaching out from our Growth Engineering division. We recently conducted an automated digital infrastructure scan of the {b_type.lower()} sector within the {loc} market. 
 
-Our systems flagged {name} due to a missing centralized web presence and an unclaimed local search directory profile. In today's market, consumers rely heavily on digital discovery, meaning a substantial volume of highly qualified local traffic is currently being routed to fully optimized competitors in your area.
+Our systems flagged {name} due to optimization gaps in local search directory profiles and digital capture funnels in {loc}.
 
-Our firm specializes in rapidly deploying high-performance digital infrastructure, complete with automated booking and SEO-optimized local directory setups for regional market leaders. 
+Our firm specializes in rapidly deploying high-performance digital infrastructure for regional market leaders. 
 
 Would you be open to a brief, 10-minute executive briefing this week to review the traffic volume you are currently missing and how we can recapture it?
 
@@ -128,55 +202,29 @@ Best regards,
 
 Growth Engineering Team"""
 
-        elif score >= 5:
-            outreach = f"""Subject: Conversion Rate Optimization & Market Share in {loc}
-
-Hello Team at {name},
-
-I hope this email finds you well. My team and I monitor digital touchpoints for local businesses, and while reviewing the {b_type.lower()} landscape in {loc}, we analyzed your current digital footprint.
-
-While {name} has established a baseline presence, we identified several notable optimization gaps—specifically regarding mobile search rendering and local conversion funnel friction. When potential clients search for your services on mobile devices, these technical friction points often result in high bounce rates and lost revenue.
-
-We have engineered custom acquisition frameworks designed exactly for these scenarios, helping businesses streamline their customer acquisition cost and increase lifetime value. 
-
-Are you available for a brief introductory call on Thursday afternoon to discuss our findings?
-
-Best regards,
-
-Growth Engineering Team"""
-        else:
-            outreach = f"""Subject: Advanced Traffic Scaling & Performance Benchmarks for {name}
-
-Hello Team at {name},
-
-I am contacting you regarding your current digital footprint in the {loc} region. After running a technical audit on {name}, I wanted to commend your team—your digital foundation and local search integrations are well-optimized compared to the regional average.
-
-However, once the foundational infrastructure is established, the next immediate step is aggressive market share capture. Our firm works with highly optimized businesses to scale their existing traffic using advanced data-driven acquisition models, ensuring you outpace regional competitors.
-
-We have compiled a localized performance benchmark report that outlines advanced traffic scaling configurations you have yet to tap into. 
-
-Please let me know if you would like me to send this report over for your review.
-
-Best regards,
-
-Growth Engineering Team"""
-
         data.append({
             "Business Name": name,
-            "Phone Number": f"+1 (555) {random.randint(100,999)}-{random.randint(1000,9999)}",
-            "Website Status": "Active" if has_website else "Action Required",
-            "GMB Profile": "Verified" if has_gmb else "Unclaimed",
+            "Address / Location": f"Central District, {loc}",
+            "Rating Value": rating_val,
+            "Review Count": review_cnt,
+            "Rating": f"{rating_val} ★ ({review_cnt})",
+            "Listing Status": "Verified" if has_gmb else "Unclaimed",
             "Urgency Score": score,
             "Outreach Template": outreach
         })
         
     return pd.DataFrame(data)
 
+
+# Execution Logic
 if generate_btn:
-    with st.spinner("Analyzing regional infrastructure and extracting market data..."):
-        df = generate_mock_leads(business_type, location)
-        
-    st.success(f"Audit completed successfully. {len(df)} enterprise entities identified.")
+    with st.spinner("Executing market scan and calculating area demand metrics..."):
+        if GOOGLE_API_KEY.strip():
+            df = fetch_real_google_businesses(business_type, location, GOOGLE_API_KEY)
+            st.success(f"LIVE Audit Complete: Retrieved real-world entities for {location}.")
+        else:
+            df = generate_mock_leads(business_type, location)
+            st.success(f"Audit Complete: Generated intelligence report for {location}.")
     
     # Executive Metrics Summary
     col1, col2, col3 = st.columns(3)
@@ -186,9 +234,43 @@ if generate_btn:
     
     st.markdown("---")
     
-    # Table View
-    st.subheader("Audited Entities Summary")
-    display_df = df[['Business Name', 'Phone Number', 'Website Status', 'GMB Profile', 'Urgency Score']]
+    # NEW FEATURE: Market Demand & Top Performer Analysis
+    st.subheader("Market Demand & Local Competitor Intelligence")
+    
+    # Calculate top performing business in the area based on rating & review volume
+    top_performer = df.sort_values(by=['Rating Value', 'Review Count'], ascending=[False, False]).iloc[0]
+    avg_rating = round(df['Rating Value'].mean(), 2)
+    total_market_reviews = df['Review Count'].sum()
+    
+    # AI Market Analysis Synthesis
+    col_top1, col_top2 = st.columns(2, gap="large")
+    
+    with col_top1:
+        st.markdown(f"**Top Performing Entity in {location}:**")
+        st.info(f"🏆 **{top_performer['Business Name']}**\n\n"
+                f"• **Rating:** {top_performer['Rating Value']} Stars\n\n"
+                f"• **Total Customer Reviews:** {top_performer['Review Count']}\n\n"
+                f"• **Market Dominance:** High review density indicates strong brand trust and digital capture.")
+        
+    with col_top2:
+        st.markdown(f"**AI Demand & Gap Analysis for {business_type}:**")
+        
+        # Dynamic AI market evaluation logic
+        if avg_rating >= 4.4:
+            demand_insight = f"High demand with intense competition. Consumers in {location} expect premium digital experiences. Pitching advanced scaling and automated review funnels will yield highest conversions."
+        else:
+            demand_insight = f"High unmet demand. Average area rating is moderate ({avg_rating}/5.0). Businesses in this sector are struggling with customer retention, creating a prime opportunity for modernization services."
+            
+        st.warning(f"📊 **Sector Benchmark Metrics**\n\n"
+                   f"• **Regional Avg Rating:** {avg_rating} / 5.0\n\n"
+                   f"• **Total Area Search Reviews Analyzed:** {total_market_reviews}\n\n"
+                   f"• **Strategic Opportunity:** {demand_insight}")
+
+    st.markdown("---")
+
+    # Summary Table View
+    st.subheader("Audited Entities Summary Table")
+    display_df = df[['Business Name', 'Address / Location', 'Rating', 'Listing Status', 'Urgency Score']]
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
     # Download Button
@@ -196,7 +278,7 @@ if generate_btn:
     st.download_button(
         label="Download Audit Report (CSV)",
         data=csv_data,
-        file_name=f"{business_type.lower().replace(' ', '_')}_leads_{location.lower().replace(', ', '_')}.csv",
+        file_name=f"{business_type.lower().replace(' ', '_')}_audit_{location.lower().replace(', ', '_')}.csv",
         mime="text/csv"
     )
 
@@ -204,7 +286,7 @@ if generate_btn:
     
     # Outreach Script Viewer
     st.subheader("Executive Outreach Viewer")
-    st.markdown("Select an audited entity below to view and copy its customized AI-generated outreach script.")
+    st.markdown("Select an audited entity below to view its customized AI-generated outreach script.")
     
     selected_business = st.selectbox("Select Target Account:", df['Business Name'])
     
