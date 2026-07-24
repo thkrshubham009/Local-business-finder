@@ -12,46 +12,73 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Professional Minimalist Styling with High Contrast (Fixed Text Visibility) ---
+# --- Clean SaaS Styling (Strict adherence to color tokens & no low opacity/white text bugs) ---
 st.markdown("""
     <style>
-    /* Global Styles */
-    .main {
-        background-color: #f8fafc;
+    /* Global App Background */
+    .stApp {
+        background-color: #0F172A !important;
+        color: #111827;
+    }
+    
+    /* Main Content Area Container */
+    .main .block-container {
+        background-color: #0F172A;
         color: #111827;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-    
-    /* Typography - Ensuring high contrast dark text */
-    h1, h2, h3, h4, h5, h6, p, span, label, div {
-        color: #111827;
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
+
+    /* Base Typography adjustments for dark canvas background */
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+        color: #FFFFFF !important;
         font-weight: 700;
         letter-spacing: -0.025em;
     }
     
-    /* Cards - White background with dark readable text */
-    .stCard, div[data-testid="stVerticalBlock"] > div.element-container > div.stMarkdown, .roadmap-container {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        margin-bottom: 16px;
-        color: #111827 !important;
-    }
-    
-    /* Ensure markdown text inside containers is fully legible */
-    .stMarkdown p, .stMarkdown li, .stMarkdown span {
-        color: #334155 !important;
+    .stMarkdown p, .stMarkdown span, .stMarkdown li {
+        color: #F8FAFC !important;
     }
 
-    /* Buttons - Dark background with crisp white text */
+    /* Cards - White background with dark primary and secondary text */
+    .roadmap-container, div[data-testid="stForm"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 32px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin-bottom: 24px;
+    }
+
+    /* Typography inside white cards */
+    .roadmap-container h1, .roadmap-container h2, .roadmap-container h3, .roadmap-container h4, .roadmap-container h5, .roadmap-container h6 {
+        color: #111827 !important;
+        border-bottom: 1px solid #F1F5F9;
+        padding-bottom: 8px;
+        margin-top: 24px;
+    }
+
+    .roadmap-container p, .roadmap-container li, .roadmap-container span {
+        color: #6B7280 !important;
+    }
+    
+    .roadmap-container strong {
+        color: #111827 !important;
+    }
+
+    /* Form specific styles */
+    div[data-testid="stForm"] label {
+        color: #111827 !important;
+        font-weight: 600 !important;
+    }
+    
+    div[data-testid="stForm"] p, div[data-testid="stForm"] span {
+        color: #111827 !important;
+    }
+
+    /* Buttons - Accent color with solid white text on dark/light context */
     .stButton > button {
-        background-color: #0f172a !important;
-        color: #ffffff !important;
+        background-color: #2563EB !important;
+        color: #FFFFFF !important;
         border-radius: 8px;
         font-weight: 600;
         padding: 0.6rem 1.2rem;
@@ -60,41 +87,24 @@ st.markdown("""
         transition: background-color 0.2s ease;
     }
     .stButton > button:hover {
-        background-color: #1e293b !important;
-        color: #ffffff !important;
+        background-color: #1D4ED8 !important;
+        color: #FFFFFF !important;
     }
     
-    /* Form Inputs - Clean borders and dark text */
-    .stTextInput > div > div > input, 
-    .stSelectbox > div > div > select, 
-    .stNumberInput > div > div > input, 
-    .stTextArea > div > div > textarea {
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        background-color: #ffffff !important;
+    /* Inputs */
+    input, select, textarea {
+        background-color: #FFFFFF !important;
         color: #111827 !important;
+        border: 1px solid #D1D5DB !important;
+        border-radius: 8px !important;
     }
 
-    /* Fix Streamlit labels and captions visibility */
-    .stTextInput label, .stSelectbox label, .stNumberInput label, .stTextArea label, .stMultiSelect label {
-        color: #1e293b !important;
-        font-weight: 600 !important;
-    }
-    
-    /* Navigation Bar styling */
-    .nav-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 0;
-        border-bottom: 1px solid #e2e8f0;
-        margin-bottom: 2rem;
-    }
-    .nav-brand {
+    /* Navigation Header */
+    .nav-header {
         font-size: 1.25rem;
-        font-weight: 700;
-        color: #0f172a;
-        text-decoration: none;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        color: #FFFFFF;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -109,7 +119,7 @@ def set_tab(tab_name):
 # --- Top Navigation Bar ---
 col1, col2, col3, col4 = st.columns([4, 1, 1, 1])
 with col1:
-    st.markdown("<span style='font-size: 1.25rem; font-weight: 800; letter-spacing: -0.05em; color: #0f172a;'>OpportunityOS</span>", unsafe_allow_html=True)
+    st.markdown("<div class='nav-header'>OpportunityOS</div>", unsafe_allow_html=True)
 with col2:
     if st.button("Navigator", key="nav_home"):
         set_tab("Landing")
@@ -120,7 +130,7 @@ with col4:
     if st.button("Resources", key="nav_resources"):
         set_tab("Resources")
 
-st.markdown("<hr style='margin-top: 0; margin-bottom: 2rem; border-color: #e2e8f0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='margin-top: 0; margin-bottom: 2rem; border-color: #334155;'>", unsafe_allow_html=True)
 
 # --- About Tab Content ---
 if st.session_state.nav_tab == "About":
@@ -298,7 +308,7 @@ if st.session_state.nav_tab == "Landing":
         st.markdown("## Your Personalized Opportunity Roadmap")
         st.markdown("Generated successfully based on your profile parameters.")
         
-        # Display the result inside a structured layout container with guaranteed high-contrast styling
+        # Display the result inside a clean white card container with dark text formatting
         st.markdown("<div class='roadmap-container'>", unsafe_allow_html=True)
         st.markdown(st.session_state.roadmap_result)
         st.markdown("</div>", unsafe_allow_html=True)
