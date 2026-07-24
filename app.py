@@ -168,4 +168,4 @@ if 'scanned_data' in st.session_state:
                     st.error(f"API Error: {result_json}")
             except Exception as e:
                 st.error(f"Error connecting to AI: {e}")
-        
+                
