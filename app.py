@@ -372,4 +372,3 @@ if st.session_state.nav_tab == "Landing":
             if st.button("Reset Profile"):
                 del st.session_state.roadmap_result
                 st.rerun()
-    
