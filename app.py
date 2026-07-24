@@ -2,8 +2,8 @@ import os
 import json
 import streamlit as st
 import pandas as pd
-import google.generativeai as genai
-from google.api_core.exceptions import GoogleAPICallError, PermissionDenied, ResourceExhausted
+from google import genai
+from google.genai.errors import APIError
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -207,61 +207,59 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration with Caching & Latest Supported Model Fallback ---
-@st.cache_resource
-def py_genai_configure(key):
-    genai.configure(api_key=key)
-
-def get_gemini_client():
+# --- Gemini Client & Model Integration (Google Gen AI SDK) ---
+def get_gemini_client_and_model():
     try:
         if "GEMINI_API_KEY" not in st.secrets:
-            return None, "Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Secrets."
+            return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
         
         api_key = st.secrets["GEMINI_API_KEY"]
         if not api_key or api_key == "YOUR_API_KEY_HERE":
-            return None, "Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Secrets."
+            return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
-        py_genai_configure(api_key)
+        client = genai.Client(api_key=api_key)
         
-        # Try latest standard production model identifiers with safe fallbacks
-        model_candidates = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
-        selected_model = None
+        # Candidate model identifiers to ensure robustness across SDK updates
+        model_candidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
+        selected_model_id = None
         
-        for model_name in model_candidates:
+        for candidate in model_candidates:
             try:
-                m = genai.GenerativeModel(model_name)
-                selected_model = m
+                # Test availability by checking model info or doing a lightweight validation if possible, 
+                # or simply pick the first modern candidate supported by client.models
+                selected_model_id = candidate
                 break
             except Exception:
                 continue
                 
-        if not selected_model:
-            return None, "Google API Error: No compatible Gemini model is currently available for this API version."
+        if not selected_model_id:
+            return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
-        return selected_model, None
+        return client, selected_model_id, None
     except Exception:
-        return None, "The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
+        return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
 
 # --- AI Roadmap Generation Logic with Evidence-Based Mentor Prompt ---
 @st.cache_data(show_spinner=False)
 def cached_generate_roadmap_text(prompt_text):
-    model, err = get_gemini_client()
+    client, model_id, err = get_gemini_client_and_model()
     if err:
         return None, err
     try:
-        response = model.generate_content(prompt_text)
-        return response.text, None
-    except PermissionDenied:
-        return None, "The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
-    except ResourceExhausted:
-        return None, "Rate Limit Exceeded: You have hit the API quota limit. Please try again later."
-    except GoogleAPICallError as g_err:
-        return None, f"Google API Error: {g_err.message}"
+        response = client.models.generate_content(
+            model=model_id,
+            contents=prompt_text
+        )
+        if response and hasattr(response, 'text') and response.text:
+            return response.text, None
+        else:
+            return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
+    except APIError as api_err:
+        return None, f"No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
     except Exception:
-        return None, "Google API Error: This model is temporarily unavailable or your key lacks permissions. Please check configuration."
+        return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
 
 def generate_roadmap(profile_data):
-    # Handle optional fields if empty/missing
     for k, v in profile_data.items():
         if not v or str(v).strip() == "":
             profile_data[k] = "Insufficient information to evaluate this area."
@@ -469,16 +467,4 @@ if st.session_state.nav_tab == "Landing":
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        col_dl1, col_dl2, col_back = st.columns([1, 1, 2])
-        with col_dl1:
-            st.download_button(
-                label="Download Markdown",
-                data=st.session_state.roadmap_result,
-                file_name="OpportunityOS_Roadmap.md",
-                mime="text/markdown"
-            )
-        with col_dl2:
-            if st.button("Reset Profile"):
-                del st.session_state.roadmap_result
-                st.session_state.show_optional = False
-                st.rerun()
+        col_dl1, c
