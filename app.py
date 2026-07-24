@@ -185,12 +185,25 @@ def get_verified_gemini_client():
         if not api_key or api_key == "YOUR_API_KEY_HERE":
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
-        # Initialize standard Gen AI client using AI Studio key
         client = genai.Client(api_key=api_key)
         
-        # Use standard officially documented current generation model identifier
-        model_id = 'gemini-2.0-flash'
-        
+        # Iteratively probe available models from the new SDK client listing to prevent hardcoded mismatches
+        model_id = None
+        try:
+            for m in client.models.list():
+                # Check if the model supports text/content generation and matches standard naming convention
+                name = getattr(m, 'name', '')
+                if 'gemini' in name and ('flash' in name or 'pro' in name):
+                    # Extract clean short model id if full resource path is returned
+                    model_id = name.split('/')[-1] if '/' in name else name
+                    break
+        except Exception:
+            pass
+
+        # Ultimate fallback if listing is restricted or fails
+        if not model_id:
+            model_id = 'gemini-2.5-flash'
+            
         return client, model_id, None
     except Exception:
         return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
@@ -433,4 +446,4 @@ if st.session_state.nav_tab == "Landing":
                 del st.session_state.roadmap_result
                 st.session_state.show_optional = False
                 st.rerun()
-                    
+                
