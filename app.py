@@ -26,7 +26,7 @@ st.markdown("Scan real-world global markets with clean address formatting and fr
 st.markdown("---")
 
 # Hardcode your Geoapify API key directly here
-GEOAPIFY_API_KEY = "YOUR_ACTUAL_GEOAPIFY_API_KEY_HERE"
+GEOAPIFY_API_KEY = "cd4522b164434ac995e57fa7c4f980a7"
 
 st.subheader("Step 1: Custom Search Parameters")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
