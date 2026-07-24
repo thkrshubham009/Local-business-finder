@@ -3,14 +3,14 @@ import random
 import requests
 import streamlit as st
 
-# Page Configuration - Clean, enterprise-grade styling
+# Page Configuration - Enterprise SaaS Layout
 st.set_page_config(
     page_title="Local Business Intelligence Platform",
     page_icon=None,
     layout="wide"
 )
 
-# Custom CSS for modern enterprise SaaS UI
+# Custom CSS for modern executive SaaS UI
 st.markdown("""
     <style>
     .main {
@@ -56,17 +56,23 @@ st.title("Local Business Intelligence Platform")
 st.markdown("Automated market scanning, demand analysis, and executive outreach generation.")
 st.markdown("---")
 
-# Pre-populated dropdown lists (Searchable + Custom Typing Enabled)
+# Comprehensive Searchable Options Lists
 industry_options = [
     "Cafes & Coffee Shops", 
     "Plumbing & HVAC Services", 
     "Dental Clinics", 
     "Real Estate Agencies", 
-    "Fitness Centers", 
-    "Law Firms",
-    "Bakeries",
-    "Auto Repair Shops",
-    "Digital Marketing Agencies"
+    "Fitness Centers & Gyms", 
+    "Law Firms & Legal Services",
+    "Bakeries & Pastry Shops",
+    "Auto Repair & Detailing",
+    "Digital Marketing Agencies",
+    "Boutique Hotels & Resorts",
+    "Restaurants & Fine Dining",
+    "Roofing & Construction",
+    "SLA & Medical Spas",
+    "Veterinary Clinics",
+    "Accounting & CPA Firms"
 ]
 
 location_options = [
@@ -75,26 +81,37 @@ location_options = [
     "Los Angeles, CA", 
     "Chicago, IL", 
     "Miami, FL", 
+    "Houston, TX",
+    "Phoenix, AZ",
     "London, UK", 
     "Toronto, ON",
     "Tokyo, Japan",
-    "Sydney, Australia"
+    "Sydney, Australia",
+    "Dubai, UAE",
+    "Paris, France",
+    "Berlin, Germany"
 ]
 
-# Main Page Inputs (Dropdown search + text typing capability)
+# Main Searchable Dropdown Inputs (Typing automatically filters options live)
 st.subheader("Market Audit Parameters")
 
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    selected_ind = st.selectbox("Search / Select Industry", options=industry_options, index=0)
-    custom_ind = st.text_input("Or type custom industry (optional):", value="")
-    business_type = custom_ind.strip() if custom_ind.strip() else selected_ind
+    business_type = st.selectbox(
+        "Industry / Business Category", 
+        options=industry_options, 
+        index=0,
+        help="Type directly into the box to filter industries in real-time."
+    )
     
 with col_input2:
-    selected_loc = st.selectbox("Search / Select Location", options=location_options, index=0)
-    custom_loc = st.text_input("Or type custom address / city (optional):", value="")
-    location = custom_loc.strip() if custom_loc.strip() else selected_loc
+    location = st.selectbox(
+        "Target Location / City", 
+        options=location_options, 
+        index=0,
+        help="Type directly into the box to filter locations in real-time."
+    )
 
 with col_btn:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
@@ -224,7 +241,7 @@ if generate_btn:
 
     st.markdown("---")
 
-    # Table View (Includes Outreach Script Column Directly Inside)
+    # Table View (Includes Outreach Script Column Directly Inside Table)
     st.subheader("Audited Business Intelligence Table")
     display_df = df[['Business Name', 'Address / Location', 'Rating', 'Listing Status', 'Urgency Score', 'Outreach Script']]
     st.dataframe(display_df, use_container_width=True, hide_index=True)
