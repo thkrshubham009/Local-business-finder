@@ -468,7 +468,10 @@ if st.session_state.nav_tab == "Landing":
         
         col_dl1, col_dl2, col_back = st.columns([1, 1, 2])
         with col_dl1:
-            st.download_button(
-                label="Download Markdown"),
-                data=st.session_state.roadmap_result,
-                fi
+    st.download_button(
+        label="Download Markdown",
+        data=st.session_state.roadmap_result,
+        file_name="OpportunityOS_Roadmap.md",
+        mime="text/markdown",
+        use_container_width=True
+    )
