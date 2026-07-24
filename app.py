@@ -182,6 +182,7 @@ def get_verified_gemini_client():
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
         
         api_key = st.secrets["GEMINI_API_KEY"]
+        st.write("API Key starts with:", api_key[:8])
         if not api_key or api_key == "YOUR_API_KEY_HERE":
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
@@ -205,9 +206,8 @@ def get_verified_gemini_client():
             model_id = 'gemini-2.5-flash'
             
         return client, model_id, None
-    except Exception:
-        return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
-
+    except Exception as e:
+        return None, None, f"Gemini Client Error: {e}"
 # --- AI Roadmap Generation Logic with Evidence-Based Mentor Prompt ---
 @st.cache_data(show_spinner=False)
 def cached_generate_roadmap_text(prompt_text):
@@ -223,11 +223,11 @@ def cached_generate_roadmap_text(prompt_text):
             return response.text, None
         else:
             return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
-    except APIError:
-        return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
-    except Exception:
-        return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
+    except APIError as e:
+        return None, f"Google API Error: {e}"
 
+    except Exception as e:
+    return None, f"Python Error: {e}"
 def generate_roadmap(profile_data):
     for k, v in profile_data.items():
         if not v or str(v).strip() == "":
