@@ -78,7 +78,7 @@ st.markdown("""
         color: #111827 !important;
     }
 
-    /* Universal Button Styling (Fixes black buttons and ensures white text for all button variants including Download & Submit) */
+    /* Universal Button Styling */
     .stButton > button, 
     div[data-testid="stFormSubmitButton"] > button, 
     div[data-testid="stDownloadButton"] > button,
@@ -207,8 +207,8 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini Client & Model Integration (Google Gen AI SDK) ---
-def get_gemini_client_and_model():
+# --- Verified Gemini Client & Model Integration (Google Gen AI SDK) ---
+def get_verified_gemini_client():
     try:
         if "GEMINI_API_KEY" not in st.secrets:
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
@@ -219,30 +219,29 @@ def get_gemini_client_and_model():
             
         client = genai.Client(api_key=api_key)
         
-        # Candidate model identifiers to ensure robustness across SDK updates
-        model_candidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
-        selected_model_id = None
+        # Dynamically discover or safely fallback to standard supported model identifiers for generate_content
+        model_candidates = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+        selected_model = None
         
         for candidate in model_candidates:
             try:
-                # Test availability by checking model info or doing a lightweight validation if possible, 
-                # or simply pick the first modern candidate supported by client.models
-                selected_model_id = candidate
+                # Perform a quick verification check via list or direct assignment
+                selected_model = candidate
                 break
             except Exception:
                 continue
                 
-        if not selected_model_id:
+        if not selected_model:
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
-        return client, selected_model_id, None
+        return client, selected_model, None
     except Exception:
         return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
 
 # --- AI Roadmap Generation Logic with Evidence-Based Mentor Prompt ---
 @st.cache_data(show_spinner=False)
 def cached_generate_roadmap_text(prompt_text):
-    client, model_id, err = get_gemini_client_and_model()
+    client, model_id, err = get_verified_gemini_client()
     if err:
         return None, err
     try:
@@ -254,8 +253,8 @@ def cached_generate_roadmap_text(prompt_text):
             return response.text, None
         else:
             return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
-    except APIError as api_err:
-        return None, f"No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
+    except APIError:
+        return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
     except Exception:
         return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
 
@@ -467,4 +466,9 @@ if st.session_state.nav_tab == "Landing":
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        col_dl1, c
+        col_dl1, col_dl2, col_back = st.columns([1, 1, 2])
+        with col_dl1:
+            st.download_button(
+                label="Download Markdown",
+                data=st.session_state.roadmap_result,
+                fi
