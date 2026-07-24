@@ -128,16 +128,22 @@ def set_tab(tab_name):
     st.session_state.nav_tab = tab_name
 
 # --- Top Navigation Bar ---
-col1, col2, col3, col4 = st.columns([4, 1, 1, 1])
+col1, col2, col3, col4, col5, col6 = st.columns([3, 1, 1, 1, 1, 1])
 with col1:
     st.markdown("<div class='nav-header'>OpportunityOS</div>", unsafe_allow_html=True)
 with col2:
     if st.button("Navigator", key="nav_home"):
         set_tab("Landing")
 with col3:
+    if st.button("Career", key="nav_career"):
+        set_tab("Career Navigator")
+with col4:
+    if st.button("Opportunities", key="nav_opps"):
+        set_tab("Opportunity Finder")
+with col5:
     if st.button("About", key="nav_about"):
         set_tab("About")
-with col4:
+with col6:
     if st.button("Resources", key="nav_resources"):
         set_tab("Resources")
 
@@ -182,7 +188,6 @@ def get_verified_gemini_client():
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
         
         api_key = st.secrets["GEMINI_API_KEY"]
-        st.write("API Key starts with:", api_key[:8])
         if not api_key or api_key == "YOUR_API_KEY_HERE":
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
@@ -228,6 +233,7 @@ def get_verified_gemini_client():
         return client, model_id, None
     except Exception as e:
         return None, None, f"Gemini Client Error: {e}"
+
 # --- AI Roadmap Generation Logic with Evidence-Based Mentor Prompt ---
 @st.cache_data(show_spinner=False)
 def cached_generate_roadmap_text(prompt_text):
@@ -245,9 +251,9 @@ def cached_generate_roadmap_text(prompt_text):
             return None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
     except APIError as e:
         return None, f"Google API Error: {e}"
-
     except Exception as e:
         return None, f"Python Error: {e}"
+
 def generate_roadmap(profile_data):
     for k, v in profile_data.items():
         if not v or str(v).strip() == "":
@@ -466,4 +472,131 @@ if st.session_state.nav_tab == "Landing":
                 del st.session_state.roadmap_result
                 st.session_state.show_optional = False
                 st.rerun()
+
+# --- New Feature 1: Career Navigator Tab ---
+if st.session_state.nav_tab == "Career Navigator":
+    st.markdown("## Career Navigator")
+    st.markdown("Analyze an exact profession path or evaluate multiple options matching your background objectively.")
+    
+    career_mode = st.radio("Select Evaluation Mode", ["Mode 1 - I already know my career", "Mode 2 - Help me choose"])
+    
+    if career_mode == "Mode 1 - I already know my career":
+        with st.form("career_known_form"):
+            desired_career = st.text_input("Desired Career", placeholder="e.g., AI Engineer, Cryptographer, Robotics Engineer...")
+            submitted_career = st.form_submit_button("Analyze Career Path")
+            
+            if submitted_career:
+                if not desired_career.strip():
+                    st.error("Please enter a valid desired career.")
+                else:
+                    prompt = f"""
+                    You are an experienced career counsellor and industry researcher. Be strict, realistic, candid, and direct. Never flatter or use motivational filler. If information is missing, explicitly say: "Insufficient information to evaluate this area."
+                    
+                    Evaluate the career path: {desired_career}
+                    
+                    Provide a detailed analysis using exact markdown sections:
+                    ## Career Overview
+                    ## Reality of the Field
+                    ## Difficulty Level
+                    ## Required Skills
+                    ## Degree Recommendations
+                    ## Daily Work
+                    ## Salary Overview
+                    ## Future Demand
+                    ## Pros
+                    ## Cons
+                    ## Common Mistakes Beginners Make
+                    ## Practical Roadmap
+                    """
+                    with st.spinner("Analyzing career path..."):
+                        res, err = cached_generate_roadmap_text(prompt)
+                        if res:
+                            st.markdown("<div class='roadmap-container'>", unsafe_allow_html=True)
+                            st.markdown(res)
+                            st.markdown("</div>", unsafe_allow_html=True)
+                        else:
+                            st.error(err)
+                            
+    else:
+        with st.form("career_choice_form"):
+            st.markdown("#### Provide Background for Career Matching")
+            c1, c2 = st.columns(2)
+            with c1:
+                c_age = st.text_input("Age")
+                c_edu = st.text_input("Education Level")
+                c_fav = st.text_text_input = st.text_input("Favourite Subjects") if hasattr(st, 'text_input') else st.text_input("Favourite Subjects")
+                c_interests = st.text_input("Interests")
+                c_hobbies = st.text_input("Hobbies")
+            with c2:
+                c_strengths = st.text_input("Strengths")
+                c_weaknesses = st.text_input("Weaknesses")
+                c_personality = st.text_input("Personality")
+                c_workstyle = st.text_input("Preferred Work Style")
+                c_country = st.text_input("Preferred Country (Optional)")
                 
+            submitted_choice = st.form_submit_button("Recommend Careers")
+            
+            if submitted_choice:
+                prompt = f"""
+                You are an experienced career counsellor. Be strict, realistic, and objective. Never flatter or exaggerate. Recommend 5 to 8 suitable careers based strictly on the profile below. For every recommendation include: Why it matches, Difficulty, Required education, Future demand, and Things to improve. If data is missing say "Insufficient information to evaluate this area."
+                
+                Profile:
+                - Age: {c_age}
+                - Education Level: {c_edu}
+                - Favourite Subjects: {c_fav}
+                - Interests: {c_interests}
+                - Hobbies: {c_hobbies}
+                - Strengths: {c_strengths}
+                - Weaknesses: {c_weaknesses}
+                - Personality: {c_personality}
+                - Preferred Work Style: {c_workstyle}
+                - Preferred Country: {c_country}
+                """
+                with st.spinner("Generating career recommendations..."):
+                    res, err = cached_generate_roadmap_text(prompt)
+                    if res:
+                        st.markdown("<div class='roadmap-container'>", unsafe_allow_html=True)
+                        st.markdown(res)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    else:
+                        st.error(err)
+
+# --- New Feature 2: Opportunity Finder Tab ---
+if st.session_state.nav_tab == "Opportunity Finder":
+    st.markdown("## Opportunity Finder")
+    st.markdown("Discover rigorous, verified scholarships, competitions, hackathons, and programs matching your exact profile.")
+    
+    with st.form("opportunity_finder_form"):
+        st.markdown("#### Enter Profile Criteria")
+        of_col1, of_col2 = st.columns(2)
+        with of_col1:
+            of_age = st.text_input("Age", placeholder="Enter age...")
+            of_country = st.text_input("Country", placeholder="Enter country...")
+        with of_col2:
+            of_edu = st.text_input("Education Level", placeholder="e.g., High School, Undergrad...")
+            of_goal = st.text_input("Career Goal", placeholder="e.g., AI Research Scientist...")
+            
+        submitted_opps = st.form_submit_button("Find Verified Opportunities")
+        
+        if submitted_opps:
+            if not of_age.strip() or not of_country.strip() or not of_edu.strip() or not of_goal.strip():
+                st.error("Please fill in Age, Country, Education Level, and Career Goal.")
+            else:
+                prompt = f"""
+                You are an expert admissions committee member and mentor. Recommend specific, verified opportunities matching the profile below. Include Scholarships, Competitions, Olympiads, Hackathons, Fellowships, Research programs, Government schemes, Grants, Free certifications, and Bootcamps. 
+                If no verified opportunity exists for a category, state so honestly. Never invent opportunities. Tone must be strictly factual and realistic.
+                
+                Profile:
+                - Age: {of_age}
+                - Country: {of_country}
+                - Education Level: {of_edu}
+                - Career Goal: {of_goal}
+                """
+                with st.spinner("Searching verified opportunity databases..."):
+                    res, err = cached_generate_roadmap_text(prompt)
+                    if res:
+                        st.markdown("<div class='roadmap-container'>", unsafe_allow_html=True)
+                        st.markdown(res)
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    else:
+                        st.error(err)
