@@ -130,7 +130,7 @@ if 'scanned_data' in st.session_state:
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
     st.markdown("---")
     
-    # Step 4: Separate AI Pitch Generator via Direct REST API
+    # Step 4: Separate AI Pitch Generator with fixed Auth Header format
     st.subheader("Step 4: AI Pitch Generator")
     st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
     
@@ -148,18 +148,22 @@ if 'scanned_data' in st.session_state:
             Do not use any emojis at all. Be direct and professional.
             """
             
-            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            # Using native Gemini endpoint with header authentication required for AQ keys
+            api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+            headers = {
+                "x-goog-api-key": GEMINI_API_KEY,
+                "Content-Type": "application/json"
+            }
             payload = {
                 "contents": [{"parts": [{"text": ai_prompt}]}]
             }
             
             try:
-                response = requests.post(api_url, json=payload)
+                response = requests.post(api_url, headers=headers, json=payload)
                 result_json = response.json()
                 
-                # Extract text from direct REST response
                 pitch_text = result_json['candidates'][0]['content']['parts'][0]['text']
                 st.code(pitch_text, language="text")
             except Exception as e:
-                st.error("Error connecting to AI. Please verify your API key format or try again.")
+                st.error(f"Error connecting to AI: {e}")
                 
