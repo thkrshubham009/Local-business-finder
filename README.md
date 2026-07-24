@@ -1,0 +1,1 @@
+An AI-powered tool that automatically scans local businesses in any city, pulls their phone numbers and website status, and instantly scores how badly they need a digital upgrade. Plus, it writes customized cold outreach emails for every single business on the spot so you can pitch them right away.
