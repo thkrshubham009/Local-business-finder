@@ -102,6 +102,16 @@ st.markdown("""
     .stButton > button:hover * {
         color: #FFFFFF !important;
     }
+
+    /* Specific fix for Streamlit form submit button elements */
+    button[kind="secondaryFormSubmit"], button[kind="primary"], div[data-testid="stFormSubmitButton"] > button {
+        background-color: #2563EB !important;
+        color: #FFFFFF !important;
+        border: none !important;
+    }
+    div[data-testid="stFormSubmitButton"] > button * {
+        color: #FFFFFF !important;
+    }
     
     /* Inputs */
     input, select, textarea {
@@ -168,7 +178,7 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration (Standard API Key Authentication with Updated Model) ---
+# --- Gemini API Configuration (Standard API Key Authentication with Current Supported Model) ---
 def get_gemini_client():
     try:
         if "GEMINI_API_KEY" not in st.secrets:
@@ -179,7 +189,8 @@ def get_gemini_client():
             return None, "Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Secrets."
             
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Updated to use the currently supported model identifier
+        model = genai.GenerativeModel('gemini-3.6-flash')
         return model, None
     except Exception as e:
         return None, "The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
