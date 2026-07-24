@@ -25,11 +25,8 @@ st.title("Global Business Intelligence Platform")
 st.markdown("Scan real-world global markets with clean address formatting and free-form input.")
 st.markdown("---")
 
-# Sidebar Configuration for API Key Input
-with st.sidebar:
-    st.subheader("Configuration")
-    geoapify_api_key = st.text_input("Enter Geoapify API Key:", type="password", help="Get a free key instantly from geoapify.com")
-    st.markdown("[Get a free Geoapify API Key](https://www.geoapify.com/)")
+# Hardcode your Geoapify API key directly here
+GEOAPIFY_API_KEY = "YOUR_ACTUAL_GEOAPIFY_API_KEY_HERE"
 
 st.subheader("Step 1: Custom Search Parameters")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
