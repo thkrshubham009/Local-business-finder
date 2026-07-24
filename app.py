@@ -3,6 +3,7 @@ import json
 import streamlit as st
 import pandas as pd
 import google.generativeai as genai
+from google.api_core.exceptions import GoogleAPICallError, PermissionDenied, ResourceExhausted
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -156,17 +157,27 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration (Updated Hardcoded API Key) ---
+# --- Secure Gemini API Configuration ---
 def get_gemini_client():
-    api_key = "AQ.Ab8RN6IfmipyLGwqCHZ11-akm58yyyTg55wMF2CbjmFH5Sg7_A"
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-2.5-flash')
+    try:
+        if "GEMINI_API_KEY" not in st.secrets:
+            return None, "API key missing. Please configure 'GEMINI_API_KEY' in your Streamlit Secrets."
+        
+        api_key = st.secrets["GEMINI_API_KEY"]
+        if not api_key or api_key == "YOUR_API_KEY_HERE":
+            return None, "Invalid API key detected in Streamlit Secrets."
+            
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        return model, None
+    except Exception as e:
+        return None, f"Failed to initialize Gemini client: {str(e)}"
 
-# --- AI Roadmap Generation Logic ---
+# --- AI Roadmap Generation Logic with Comprehensive Error Handling ---
 def generate_roadmap(profile_data):
-    model = get_gemini_client()
-    if not model:
-        return None, "API client initialization failed."
+    model, err = get_gemini_client()
+    if err:
+        return None, err
 
     prompt = f"""
     You are an expert, highly experienced education and career mentor. Based on the student profile below, generate a comprehensive, structured career and opportunity roadmap.
@@ -234,8 +245,14 @@ def generate_roadmap(profile_data):
     try:
         response = model.generate_content(prompt)
         return response.text, None
+    except PermissionDenied:
+        return None, "Authentication Error: Your Gemini API key is invalid, revoked, or lacks correct permissions."
+    except ResourceExhausted:
+        return None, "Rate Limit Exceeded: You have hit the API quota limit. Please try again later."
+    except GoogleAPICallError as g_err:
+        return None, f"Google API Error: {g_err.message}"
     except Exception as e:
-        return None, f"Error communicating with AI service: {str(e)}"
+        return None, f"Network or unexpected error occurred: {str(e)}"
 
 # --- Landing Page & Form View ---
 if st.session_state.nav_tab == "Landing":
