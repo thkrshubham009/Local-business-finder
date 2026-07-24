@@ -19,25 +19,31 @@ st.markdown("""
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #0f172a;
         letter-spacing: -0.025em;
+        font-weight: 700;
     }
+    
+    /* Input & Button Alignments */
     .stButton>button {
         background-color: #0f172a;
         color: white;
         border-radius: 6px;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
+        padding: 0.55rem 1.25rem;
+        font-weight: 600;
         border: none;
+        width: 100%;
+        transition: all 0.2s ease;
     }
     .stButton>button:hover {
         background-color: #1e293b;
         color: white;
     }
+
     div[data-testid="stMetricValue"] {
         font-size: 1.8rem;
         color: #0f172a;
         font-weight: 600;
     }
-    /* Clean up the dataframe look */
+    
     .stDataFrame {
         border-radius: 8px;
         border: 1px solid #e2e8f0;
@@ -45,16 +51,25 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Header Section
+# Main Header Section
 st.title("Local Business Intelligence Platform")
-st.markdown("Automated market scanning, digital health assessment, and executive-level outreach generation.")
+st.markdown("Automated market scanning, digital health assessment, and executive outreach generation.")
 st.markdown("---")
 
-# Sidebar Configuration
-st.sidebar.header("Audit Parameters")
-business_type = st.sidebar.text_input("Industry / Business Type", value="Cafes")
-location = st.sidebar.text_input("Target Location", value="Austin, TX")
-generate_btn = st.sidebar.button("Execute Business Audit")
+# Main Page Audit Controls (Moved from Sidebar to Main Page)
+st.subheader("Market Audit Parameters")
+
+col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
+
+with col_input1:
+    business_type = st.text_input("Industry / Business Type", value="Cafes")
+with col_input2:
+    location = st.text_input("Target Location", value="Austin, TX")
+with col_btn:
+    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True) # Spacer to align button with text inputs
+    generate_btn = st.button("Execute Audit")
+
+st.markdown("---")
 
 def generate_mock_leads(b_type, loc):
     """Simulates enterprise business data extraction and health scoring."""
@@ -74,7 +89,7 @@ def generate_mock_leads(b_type, loc):
         # Calculate urgency score (1-10)
         score = 10 if not has_website and not has_gmb else (6 if not has_website else 2)
         
-        # Professional, extended high-conversion outreach drafting
+        # Professional, multi-paragraph outreach script
         if score >= 8:
             outreach = f"""Subject: Digital Infrastructure Audit for {name} - Immediate Action Recommended
 
@@ -150,13 +165,12 @@ if generate_btn:
     
     st.markdown("---")
     
-    # EXCEL FORMAT DATA TABLE
+    # Excel Grid Format Table
     st.subheader("Lead Database (Grid View)")
-    # We display everything except the long script in the table to keep it looking clean
     display_df = df[['Business Name', 'Phone Number', 'Website Status', 'GMB Profile', 'Urgency Score']]
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
-    # Download Button for the CSV
+    # Download Button
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="Download Leads as CSV",
@@ -167,18 +181,16 @@ if generate_btn:
 
     st.markdown("---")
     
-    # OUTREACH SCRIPT VIEWER
+    # Outreach Script Viewer
     st.subheader("Executive Outreach Viewer")
-    st.markdown("Select an audited entity below to view and copy their customized AI-generated outreach script.")
+    st.markdown("Select an audited entity below to view and copy its customized AI-generated outreach script.")
     
-    # Dropdown to select the business
     selected_business = st.selectbox("Select Target Account:", df['Business Name'])
     
-    # Fetch and display the script for the selected business
     if selected_business:
         script_text = df[df['Business Name'] == selected_business]['Outreach Template'].values[0]
         st.code(script_text, language="text")
 
 else:
-    st.info("Configure search parameters in the sidebar and execute the audit to initialize data pipelines.")
+    st.info("Set target parameters above and click Execute Audit to initialize data pipelines.")
     
