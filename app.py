@@ -227,7 +227,7 @@ def cached_generate_roadmap_text(prompt_text):
         return None, f"Google API Error: {e}"
 
     except Exception as e:
-    return None, f"Python Error: {e}"
+        return None, f"Python Error: {e}"
 def generate_roadmap(profile_data):
     for k, v in profile_data.items():
         if not v or str(v).strip() == "":
