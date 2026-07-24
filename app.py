@@ -156,28 +156,18 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration (Hardcoded/Environment Fallback) ---
+# --- Gemini API Configuration (Hardcoded API Key) ---
 def get_gemini_client():
-    # Hardcode your API key below if needed, or rely on Streamlit secrets/env variables
+    # Integrated user API key
     api_key = "AQ.Ab8RN6K_JB2Vf7YOBi5QiAIno10l-d9qdaz5LzKnWMdgq4CELA"
-    
-    if api_key == "AQ.Ab8RN6K_JB2Vf7YOBi5QiAIno10l-d9qdaz5LzKnWMdgq4CELA" or not api_key:
-        if "GEMINI_API_KEY" in st.secrets:
-            api_key = st.secrets["GEMINI_API_KEY"]
-        else:
-            api_key = os.environ.get("GEMINI_API_KEY")
-    
-    if not api_key or api_key == "AQ.Ab8RN6K_JB2Vf7YOBi5QiAIno10l-d9qdaz5LzKnWMdgq4CELA":
-        return None
-        
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-1.5-flash')
+    return genai.GenerativeModel('gemini-2.5-flash')
 
 # --- AI Roadmap Generation Logic ---
 def generate_roadmap(profile_data):
     model = get_gemini_client()
     if not model:
-        return None, "API key not configured. Please hardcode your Gemini API key in the code or set it via Streamlit Secrets."
+        return None, "API client initialization failed."
 
     prompt = f"""
     You are an expert, highly experienced education and career mentor. Based on the student profile below, generate a comprehensive, structured career and opportunity roadmap.
