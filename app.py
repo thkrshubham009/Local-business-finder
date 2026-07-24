@@ -97,9 +97,12 @@ def fetch_global_businesses_with_contacts(b_type, loc, api_key):
         return pd.DataFrame()
 
 if generate_btn:
-    if not geoapify_api_key:
-        st.error("Please enter your Geoapify API key in the sidebar to run scans.")
+    if not GEOAPIFY_API_KEY or GEOAPIFY_API_KEY == "YOUR_ACTUAL_GEOAPIFY_API_KEY_HERE":
+        st.error("Please insert your valid Geoapify API key into the code.")
         st.stop()
+        
+    with st.spinner(f"Querying global registries for {business_type} in {location}..."):
+        df = fetch_global_businesses_with_contacts(business_type, location, GEOAPIFY_API_KEY)
         
     with st.spinner(f"Querying global registries for {business_type} in {location}..."):
         df = fetch_global_businesses_with_contacts(business_type, location, geoapify_api_key)
