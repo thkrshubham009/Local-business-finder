@@ -2,7 +2,6 @@ import pandas as pd
 import random
 import requests
 import streamlit as st
-import google.generativeai as genai
 
 # Page Configuration
 st.set_page_config(page_title="Local Business Intelligence Platform", layout="wide")
@@ -27,7 +26,7 @@ st.title("Local Business Intelligence Platform")
 st.markdown("Scan local markets using open-source data and generate customized AI outreach scripts.")
 st.markdown("---")
 
-# Comprehensive options lists with live type-to-search dropdown behavior
+# Searchable dropdown lists
 industry_options = [
     "Cafes & Coffee Shops", "Plumbers", "Dentists", "Real Estate Agencies", 
     "Gyms & Fitness Centers", "Restaurants", "Bakeries", "Hotels & Resorts",
@@ -131,7 +130,7 @@ if 'scanned_data' in st.session_state:
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
     st.markdown("---")
     
-    # Step 4: Separate AI Pitch Generator Restored
+    # Step 4: Separate AI Pitch Generator via Direct REST API
     st.subheader("Step 4: AI Pitch Generator")
     st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
     
@@ -141,9 +140,6 @@ if 'scanned_data' in st.session_state:
         with st.spinner("AI is writing the pitch..."):
             target_data = df[df['Business Name'] == selected_business].iloc[0]
             
-            genai.configure(api_key=GEMINI_API_KEY)
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            
             ai_prompt = f"""
             You are a highly professional enterprise sales expert. 
             Write a cold outreach email to {target_data['Business Name']} located at {target_data['Address']}. 
@@ -152,9 +148,18 @@ if 'scanned_data' in st.session_state:
             Do not use any emojis at all. Be direct and professional.
             """
             
+            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            payload = {
+                "contents": [{"parts": [{"text": ai_prompt}]}]
+            }
+            
             try:
-                response = model.generate_content(ai_prompt)
-                st.code(response.text, language="text")
+                response = requests.post(api_url, json=payload)
+                result_json = response.json()
+                
+                # Extract text from direct REST response
+                pitch_text = result_json['candidates'][0]['content']['parts'][0]['text']
+                st.code(pitch_text, language="text")
             except Exception as e:
-                st.error("Error connecting to AI. Please check your API key.")
+                st.error("Error connecting to AI. Please verify your API key format or try again.")
                 
