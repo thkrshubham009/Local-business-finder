@@ -9,7 +9,7 @@ st.set_page_config(
     page_title="OpportunityOS – AI Opportunity Navigator",
     page_icon="O",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # --- Clean SaaS Styling (Strict adherence to color tokens & no low opacity/white text bugs) ---
@@ -156,16 +156,20 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration ---
+# --- Gemini API Configuration (Hardcoded/Environment Fallback) ---
 def get_gemini_client():
-    api_key = None
-    if "GEMINI_API_KEY" in st.secrets:
-        api_key = st.secrets["GEMINI_API_KEY"]
-    else:
-        api_key = os.environ.get("GEMINI_API_KEY")
+    # Hardcode your API key below if needed, or rely on Streamlit secrets/env variables
+    api_key = "YOUR_GEMINI_API_KEY_HERE"
     
-    if not api_key:
+    if api_key == "YOUR_GEMINI_API_KEY_HERE" or not api_key:
+        if "GEMINI_API_KEY" in st.secrets:
+            api_key = st.secrets["GEMINI_API_KEY"]
+        else:
+            api_key = os.environ.get("GEMINI_API_KEY")
+    
+    if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
         return None
+        
     genai.configure(api_key=api_key)
     return genai.GenerativeModel('gemini-1.5-flash')
 
@@ -173,7 +177,7 @@ def get_gemini_client():
 def generate_roadmap(profile_data):
     model = get_gemini_client()
     if not model:
-        return None
+        return None, "API key not configured. Please hardcode your Gemini API key in the code or set it via Streamlit Secrets."
 
     prompt = f"""
     You are an expert, highly experienced education and career mentor. Based on the student profile below, generate a comprehensive, structured career and opportunity roadmap.
@@ -240,9 +244,9 @@ def generate_roadmap(profile_data):
 
     try:
         response = model.generate_content(prompt)
-        return response.text
+        return response.text, None
     except Exception as e:
-        return f"Error communicating with AI service: {str(e)}"
+        return None, f"Error communicating with AI service: {str(e)}"
 
 # --- Landing Page & Form View ---
 if st.session_state.nav_tab == "Landing":
@@ -297,12 +301,12 @@ if st.session_state.nav_tab == "Landing":
                 }
                 
                 with st.spinner("Analyzing profile and synthesizing global opportunity databases..."):
-                    result = generate_roadmap(profile_data)
+                    result, err_msg = generate_roadmap(profile_data)
                     if result:
                         st.session_state.roadmap_result = result
                         st.rerun()
                     else:
-                        st.error("Failed to generate roadmap. Please check your API key configuration.")
+                        st.error(err_msg)
 
     else:
         st.markdown("## Your Personalized Opportunity Roadmap")
