@@ -29,15 +29,20 @@ st.markdown("---")
 
 industry_options = [
     "Cafes", "Plumbers", "Dentists", "Real Estate", 
-    "Gyms", "Restaurants", "Bakeries", "Hotels"
-]
-location_options = [
-    "Austin, TX", "New York, NY", "London, UK", 
-    "Toronto, ON", "Sydney, Australia", "Chicago, IL"
-]
-
+    "Gyms", "Restaurants", "Bakeries", "Hotels"]
 st.subheader("Step 1: Select Target Market")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
+
+with col_input1:
+    business_type = st.text_input("Enter Industry:", value="Cafes & Coffee Shops")
+    
+with col_input2:
+    location = st.text_input("Enter City / Location:", value="Austin, TX")
+
+with col_btn:
+    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+    generate_btn = st.button("Start Scan")
+    
 with col_input1:
     business_type = st.selectbox("Select Industry (Type to search):", options=industry_options, index=0)
 with col_input2:
