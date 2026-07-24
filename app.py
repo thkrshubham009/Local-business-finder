@@ -61,7 +61,7 @@ with col_btn:
     generate_btn = st.button("Start Scan")
 st.markdown("---")
 
-# Your new integrated API key
+# Your integrated API key
 GEMINI_API_KEY = "AQ.Ab8RN6I8Vo6WsKXYFS84HQliVUl-qbqvGl7Po_GEa-zbCi8FrQ"
 
 def fetch_openstreetmap_businesses(b_type, loc):
@@ -130,7 +130,7 @@ if 'scanned_data' in st.session_state:
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
     st.markdown("---")
     
-    # Step 4: AI Pitch Generator via Direct REST Endpoint
+    # Step 4: AI Pitch Generator using Header Authentication
     st.subheader("Step 4: AI Pitch Generator")
     st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
     
@@ -148,8 +148,11 @@ if 'scanned_data' in st.session_state:
             Do not use any emojis at all. Be direct and professional.
             """
             
-            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-            headers = {"Content-Type": "application/json"}
+            api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+            headers = {
+                "x-goog-api-key": GEMINI_API_KEY,
+                "Content-Type": "application/json"
+            }
             payload = {
                 "contents": [{"parts": [{"text": ai_prompt}]}]
             }
@@ -165,4 +168,4 @@ if 'scanned_data' in st.session_state:
                     st.error(f"API Error: {result_json}")
             except Exception as e:
                 st.error(f"Error connecting to AI: {e}")
-                
+        
