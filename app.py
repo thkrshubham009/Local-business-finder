@@ -203,7 +203,7 @@ def get_verified_gemini_client():
 
         # Ultimate fallback if listing is restricted or fails
         if not model_id:
-            model_id = 'gemini-2.5-flash'
+            model_id = "gemini-2.5-flash-lite"
             
         return client, model_id, None
     except Exception as e:
