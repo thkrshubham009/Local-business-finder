@@ -162,28 +162,16 @@ st.markdown("<hr style='margin-top: 0; margin-bottom: 2rem; border-color: #33415
 # --- About Tab Content ---
 if st.session_state.nav_tab == "About":
     st.markdown("## About OpportunityOS")
-    st.markdown("""
-        OpportunityOS is an autonomous intelligence platform designed to bridge the gap between ambitious students and world-class opportunities. 
-        By mapping individual profiles against global databases of scholarships, government initiatives, competitive tracks, and high-impact learning resources, 
-        OpportunityOS generates structured, actionable career execution paths.
-    """)
-    st.markdown("### Core Principles")
-    st.markdown("- **Precision:** Recommendations are custom-tailored to exact profile inputs.")
-    st.markdown("- **Transparency:** Clear distinction between factual insights and suggested pathways.")
-    st.markdown("- **Actionability:** Structured milestones and skill-gap breakdowns designed for execution.")
+    st.markdown("OpportunityOS maps student profiles to global databases to build tailored career roadmaps.")
     st.stop()
 
 # --- Resources Tab Content ---
 if st.session_state.nav_tab == "Resources":
-    st.markdown("## Platform Resources & Frameworks")
-    st.markdown("Access foundational guides and open educational repositories integrated into our system architecture.")
-    st.markdown("### Verified Open Portals")
-    st.markdown("- **Global Scholarship Gateways:** Comprehensive repositories for international grants.")
-    st.markdown("- **Open Courseware Index:** Direct indexing of MIT, Harvard, and Stanford public syllabi.")
-    st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
+    st.markdown("## Platform Resources")
+    st.markdown("Access integrated open educational repositories and global scholarship databases.")
     st.stop()
 
-# --- Gemini API Configuration (Standard API Key Authentication) ---
+# --- Gemini API Configuration (Using current stable flash model) ---
 def get_gemini_client():
     try:
         if "GEMINI_API_KEY" not in st.secrets:
@@ -206,66 +194,20 @@ def generate_roadmap(profile_data):
         return None, err
 
     prompt = f"""
-    You are an expert, highly experienced education and career mentor. Based on the student profile below, generate a comprehensive, structured career and opportunity roadmap.
+    You are an expert career mentor. Based on the student profile below, generate a comprehensive career and opportunity roadmap using sections 1 through 9:
     
-    Student Profile:
-    - Age: {profile_data['age']}
-    - Country: {profile_data['country']}
-    - State/Province: {profile_data['state']}
-    - City: {profile_data['city']}
-    - Education Level: {profile_data['education_level']}
-    - Current Class/Year: {profile_data['current_class']}
-    - Career Goal: {profile_data['career_goal']}
-    - Interests: {profile_data['interests']}
-    - Skills: {profile_data['skills']}
-    - Family Income: {profile_data['family_income']}
-    - Languages: {profile_data['languages']}
-    - Preferred Study Country: {profile_data['preferred_country']}
-    - Dream University: {profile_data['dream_university']}
-
-    Strictly adhere to the following output sections, using clear markdown headers (Section 1 to Section 9):
-
+    Profile: Age {profile_data['age']}, Country {profile_data['country']}, Education {profile_data['education_level']}, Goal {profile_data['career_goal']}, Interests {profile_data['interests']}, Skills {profile_data['skills']}.
+    
+    Provide clear Markdown sections for:
     ## Section 1: Opportunity Summary
-    - Explain the student's profile comprehensively.
-    - Identify key strengths.
-    - Identify potential challenges.
-    - Recommend the best strategic path.
-
     ## Section 2: Scholarships
-    - Generate a ranked list of relevant scholarships.
-    - For each, include: Name, Why it fits, Eligibility summary, Application timeline (if known), Documents commonly required.
-    - Include a clear reminder to verify current details on the official website before applying.
-
     ## Section 3: Government Schemes
-    - Recommend relevant government schemes based on the profile.
-    - Include: Name, Purpose, Who typically benefits, General eligibility summary, Required documents.
-    - Encourage users to confirm details through official government sources.
-
     ## Section 4: Competitions
-    - Recommend hackathons, olympiads, innovation challenges, research competitions, coding competitions, and entrepreneurship competitions.
-    - Explain why each matches the user's interests.
-
     ## Section 5: Free Learning Resources
-    - Recommend specific courses or tracks from Coursera, edX, MIT OpenCourseWare, Khan Academy, fast.ai, freeCodeCamp, and Harvard Online.
-    - Explain why each course is relevant.
-
     ## Section 6: Six-Month Roadmap
-    - Provide realistic, actionable milestones broken down systematically from Month 1 to Month 6.
-
     ## Section 7: Portfolio Suggestions
-    - Recommend specific projects the student should build.
-    - Explain why.
-    - Estimate difficulty levels.
-
     ## Section 8: Skill Gap Analysis
-    - List current strengths.
-    - List missing skills.
-    - Highlight learning priorities.
-
     ## Section 9: AI Mentor Advice
-    - Write personalized guidance in a supportive, practical, and candid tone.
-    
-    Ensure all details are realistic. Distinguish between facts and suggestions. Avoid inventing official eligibility rules or deadlines.
     """
 
     try:
@@ -284,7 +226,7 @@ def generate_roadmap(profile_data):
 if st.session_state.nav_tab == "Landing":
     if 'roadmap_result' not in st.session_state:
         st.markdown("### AI Opportunity Navigator")
-        st.markdown("#### Discover scholarships, competitions, government schemes, free learning resources, and a personalized career roadmap—all in one place.")
+        st.markdown("#### Discover scholarships, competitions, schemes, and a personalized career roadmap.")
         st.markdown("<br>", unsafe_allow_html=True)
         
         with st.form("profile_form"):
@@ -317,22 +259,14 @@ if st.session_state.nav_tab == "Landing":
             
             if submitted:
                 profile_data = {
-                    "age": age,
-                    "country": country,
-                    "state": state,
-                    "city": city,
-                    "education_level": education_level,
-                    "current_class": current_class,
-                    "career_goal": career_goal,
-                    "interests": interests,
-                    "skills": skills,
-                    "family_income": family_income,
-                    "languages": languages,
-                    "preferred_country": preferred_country,
-                    "dream_university": dream_university
+                    "age": age, "country": country, "state": state, "city": city,
+                    "education_level": education_level, "current_class": current_class,
+                    "career_goal": career_goal, "interests": interests, "skills": skills,
+                    "family_income": family_income, "languages": languages,
+                    "preferred_country": preferred_country, "dream_university": dream_university
                 }
                 
-                with st.spinner("Analyzing profile and synthesizing global opportunity databases..."):
+                with st.spinner("Analyzing profile and generating roadmap..."):
                     result, err_msg = generate_roadmap(profile_data)
                     if result:
                         st.session_state.roadmap_result = result
@@ -342,9 +276,7 @@ if st.session_state.nav_tab == "Landing":
 
     else:
         st.markdown("## Your Personalized Opportunity Roadmap")
-        st.markdown("Generated successfully based on your profile parameters.")
         
-        # Display the result inside a clean white card container with dark text formatting
         st.markdown("<div class='roadmap-container'>", unsafe_allow_html=True)
         st.markdown(st.session_state.roadmap_result)
         st.markdown("</div>", unsafe_allow_html=True)
