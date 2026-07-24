@@ -48,14 +48,6 @@ st.markdown("""
         border-radius: 8px;
         border: 1px solid #e2e8f0;
     }
-    
-    .demand-box {
-        background-color: #ffffff;
-        padding: 1.25rem;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        margin-bottom: 1rem;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -64,7 +56,7 @@ st.title("Local Business Intelligence Platform")
 st.markdown("Automated market scanning, demand analysis, and executive outreach generation.")
 st.markdown("---")
 
-# Pre-populated options for quick search + allows custom typing
+# Pre-populated dropdown lists (Searchable + Custom Typing Enabled)
 industry_options = [
     "Cafes & Coffee Shops", 
     "Plumbing & HVAC Services", 
@@ -89,24 +81,20 @@ location_options = [
     "Sydney, Australia"
 ]
 
-# Main Page Search Inputs
+# Main Page Inputs (Dropdown search + text typing capability)
 st.subheader("Market Audit Parameters")
 
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    business_type = st.selectbox(
-        "Search or Select Industry", 
-        options=industry_options,
-        index=0
-    )
+    selected_ind = st.selectbox("Search / Select Industry", options=industry_options, index=0)
+    custom_ind = st.text_input("Or type custom industry (optional):", value="")
+    business_type = custom_ind.strip() if custom_ind.strip() else selected_ind
     
 with col_input2:
-    location = st.selectbox(
-        "Search or Select Location / City", 
-        options=location_options,
-        index=0
-    )
+    selected_loc = st.selectbox("Search / Select Location", options=location_options, index=0)
+    custom_loc = st.text_input("Or type custom address / city (optional):", value="")
+    location = custom_loc.strip() if custom_loc.strip() else selected_loc
 
 with col_btn:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
@@ -133,24 +121,9 @@ def fetch_real_google_businesses(b_type, loc, api_key):
         user_ratings_total = place.get("user_ratings_total", 0)
         
         has_gmb = place.get("business_status") == "OPERATIONAL"
-        
         score = 8 if user_ratings_total < 20 else (5 if rating < 4.0 else 2)
         
-        outreach = f"""Subject: Strategic Digital Footprint Optimization for {name}
-
-Hello Leadership Team at {name},
-
-Our automated market analysis system recently reviewed the {b_type.lower()} market in {loc}.
-
-During our audit of {name} (located at {address}), we identified key growth opportunities to optimize your local search rankings and convert more online discovery traffic into direct calls.
-
-With an current review baseline of {rating} stars across {user_ratings_total} reviews, implementing an automated lead acquisition funnel will significantly outperform local category competitors.
-
-Would you be open to a 10-minute briefing this Thursday to review our detailed audit findings?
-
-Best regards,
-
-Growth Engineering Team"""
+        outreach = f"Subject: Digital Optimization for {name}\n\nHello Team at {name},\n\nWe audited the {b_type.lower()} market in {loc}. Located at {address}, your current review baseline is {rating} ★ ({user_ratings_total} reviews). We identified key digital capture funnels to help you outrank local competitors.\n\nBest regards,\nGrowth Engineering"
 
         data.append({
             "Business Name": name,
@@ -160,7 +133,7 @@ Growth Engineering Team"""
             "Rating": f"{rating} ★ ({user_ratings_total})",
             "Listing Status": "Verified" if has_gmb else "Unclaimed",
             "Urgency Score": score,
-            "Outreach Template": outreach
+            "Outreach Script": outreach
         })
         
     return pd.DataFrame(data)
@@ -186,21 +159,7 @@ def generate_mock_leads(b_type, loc):
         rating_val = round(random.uniform(3.5, 4.9), 1)
         review_cnt = random.randint(15, 340)
         
-        outreach = f"""Subject: Digital Infrastructure Audit for {name} - Immediate Action Recommended
-
-Hello Team at {name},
-
-I am reaching out from our Growth Engineering division. We recently conducted an automated digital infrastructure scan of the {b_type.lower()} sector within the {loc} market. 
-
-Our systems flagged {name} due to optimization gaps in local search directory profiles and digital capture funnels in {loc}.
-
-Our firm specializes in rapidly deploying high-performance digital infrastructure for regional market leaders. 
-
-Would you be open to a brief, 10-minute executive briefing this week to review the traffic volume you are currently missing and how we can recapture it?
-
-Best regards,
-
-Growth Engineering Team"""
+        outreach = f"Subject: Infrastructure Audit for {name}\n\nHello Leadership Team,\n\nWe conducted a digital scan of {b_type.lower()} in {loc}. {name} shows key optimization gaps in local directory capture. Implementing our modernized funnels will recapture local search market share.\n\nBest regards,\nGrowth Engineering"
 
         data.append({
             "Business Name": name,
@@ -210,7 +169,7 @@ Growth Engineering Team"""
             "Rating": f"{rating_val} ★ ({review_cnt})",
             "Listing Status": "Verified" if has_gmb else "Unclaimed",
             "Urgency Score": score,
-            "Outreach Template": outreach
+            "Outreach Script": outreach
         })
         
     return pd.DataFrame(data)
@@ -234,15 +193,13 @@ if generate_btn:
     
     st.markdown("---")
     
-    # NEW FEATURE: Market Demand & Top Performer Analysis
+    # Market Demand & Top Performer Analysis
     st.subheader("Market Demand & Local Competitor Intelligence")
     
-    # Calculate top performing business in the area based on rating & review volume
     top_performer = df.sort_values(by=['Rating Value', 'Review Count'], ascending=[False, False]).iloc[0]
     avg_rating = round(df['Rating Value'].mean(), 2)
     total_market_reviews = df['Review Count'].sum()
     
-    # AI Market Analysis Synthesis
     col_top1, col_top2 = st.columns(2, gap="large")
     
     with col_top1:
@@ -255,7 +212,6 @@ if generate_btn:
     with col_top2:
         st.markdown(f"**AI Demand & Gap Analysis for {business_type}:**")
         
-        # Dynamic AI market evaluation logic
         if avg_rating >= 4.4:
             demand_insight = f"High demand with intense competition. Consumers in {location} expect premium digital experiences. Pitching advanced scaling and automated review funnels will yield highest conversions."
         else:
@@ -268,12 +224,12 @@ if generate_btn:
 
     st.markdown("---")
 
-    # Summary Table View
-    st.subheader("Audited Entities Summary Table")
-    display_df = df[['Business Name', 'Address / Location', 'Rating', 'Listing Status', 'Urgency Score']]
+    # Table View (Includes Outreach Script Column Directly Inside)
+    st.subheader("Audited Business Intelligence Table")
+    display_df = df[['Business Name', 'Address / Location', 'Rating', 'Listing Status', 'Urgency Score', 'Outreach Script']]
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     
-    # Download Button
+    # Download CSV Button
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(
         label="Download Audit Report (CSV)",
@@ -282,18 +238,6 @@ if generate_btn:
         mime="text/csv"
     )
 
-    st.markdown("---")
-    
-    # Outreach Script Viewer
-    st.subheader("Executive Outreach Viewer")
-    st.markdown("Select an audited entity below to view its customized AI-generated outreach script.")
-    
-    selected_business = st.selectbox("Select Target Account:", df['Business Name'])
-    
-    if selected_business:
-        script_text = df[df['Business Name'] == selected_business]['Outreach Template'].values[0]
-        st.code(script_text, language="text")
-
 else:
-    st.info("Select parameters above and click Execute Audit to initialize data pipelines.")
+    st.info("Select or type parameters above and click Execute Audit to initialize data pipelines.")
     
