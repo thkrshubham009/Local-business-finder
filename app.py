@@ -2,7 +2,6 @@ import pandas as pd
 import random
 import requests
 import streamlit as st
-import google.generativeai as genai
 
 # Page Configuration
 st.set_page_config(page_title="Local Business Intelligence Platform", layout="wide")
@@ -62,7 +61,7 @@ with col_btn:
     generate_btn = st.button("Start Scan")
 st.markdown("---")
 
-# Your integrated API key
+# Your new integrated API key
 GEMINI_API_KEY = "AQ.Ab8RN6I8Vo6WsKXYFS84HQliVUl-qbqvGl7Po_GEa-zbCi8FrQ"
 
 def fetch_openstreetmap_businesses(b_type, loc):
@@ -131,7 +130,7 @@ if 'scanned_data' in st.session_state:
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
     st.markdown("---")
     
-    # Step 4: AI Pitch Generator using Vertex-compatible model identifier
+    # Step 4: AI Pitch Generator via Direct REST Endpoint
     st.subheader("Step 4: AI Pitch Generator")
     st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
     
@@ -149,12 +148,21 @@ if 'scanned_data' in st.session_state:
             Do not use any emojis at all. Be direct and professional.
             """
             
+            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "contents": [{"parts": [{"text": ai_prompt}]}]
+            }
+            
             try:
-                genai.configure(api_key=GEMINI_API_KEY)
-                # Vertex AI compatible model path for AQ keys
-                model = genai.GenerativeModel('publishers/google/models/gemini-1.5-flash')
-                response = model.generate_content(ai_prompt)
-                st.code(response.text, language="text")
+                response = requests.post(api_url, headers=headers, json=payload)
+                result_json = response.json()
+                
+                if "candidates" in result_json:
+                    pitch_text = result_json['candidates'][0]['content']['parts'][0]['text']
+                    st.code(pitch_text, language="text")
+                else:
+                    st.error(f"API Error: {result_json}")
             except Exception as e:
                 st.error(f"Error connecting to AI: {e}")
                 
