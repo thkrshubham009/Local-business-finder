@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Clean SaaS Styling (Fixed button visibility and text opacity bugs) ---
+# --- Clean SaaS Styling (Fixed button visibility, text readability, and black button bug) ---
 st.markdown("""
     <style>
     /* Global App Background */
@@ -76,7 +76,7 @@ st.markdown("""
         color: #111827 !important;
     }
 
-    /* Buttons - Ensure text visibility, proper padding, and minimum height of 48px */
+    /* Buttons - Ensure text visibility, proper padding, minimum height of 48px, and crisp blue styling */
     .stButton > button {
         background-color: #2563EB !important;
         color: #FFFFFF !important;
@@ -93,9 +93,13 @@ st.markdown("""
     .stButton > button * {
         color: #FFFFFF !important;
         opacity: 1 !important;
+        fill: #FFFFFF !important;
     }
     .stButton > button:hover {
         background-color: #1D4ED8 !important;
+        color: #FFFFFF !important;
+    }
+    .stButton > button:hover * {
         color: #FFFFFF !important;
     }
     
@@ -164,7 +168,7 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration (Standard API Key Authentication) ---
+# --- Gemini API Configuration (Standard API Key Authentication with Updated Model) ---
 def get_gemini_client():
     try:
         if "GEMINI_API_KEY" not in st.secrets:
@@ -175,10 +179,10 @@ def get_gemini_client():
             return None, "Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Secrets."
             
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         return model, None
     except Exception as e:
-        return None, f"The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
+        return None, "The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
 
 # --- AI Roadmap Generation Logic ---
 def generate_roadmap(profile_data):
