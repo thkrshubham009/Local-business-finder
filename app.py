@@ -27,7 +27,7 @@ st.title("Local Business Intelligence Platform")
 st.markdown("Scan local markets using open-source data and generate customized AI outreach scripts.")
 st.markdown("---")
 
-# Comprehensive options lists that support searchable dropdown behavior in Streamlit
+# Comprehensive options lists with live type-to-search dropdown behavior
 industry_options = [
     "Cafes & Coffee Shops", "Plumbers", "Dentists", "Real Estate Agencies", 
     "Gyms & Fitness Centers", "Restaurants", "Bakeries", "Hotels & Resorts",
@@ -62,7 +62,7 @@ with col_btn:
     generate_btn = st.button("Start Scan")
 st.markdown("---")
 
-# Your provided API key integrated directly
+# Your integrated API key
 GEMINI_API_KEY = "AQ.Ab8RN6IDS2MgcK_-XYZqfP2f0jo22HSnnGm1TMnxDqyCJ_DbiA"
 
 def fetch_openstreetmap_businesses(b_type, loc):
@@ -90,16 +90,12 @@ def fetch_openstreetmap_businesses(b_type, loc):
         simulated_rating = round(random.uniform(3.2, 5.0), 1)
         simulated_reviews = random.randint(5, 150)
         score = 8 if simulated_reviews < 20 else (5 if simulated_rating < 4.0 else 2)
-        
-        # Generate the custom outreach script automatically for the table
-        outreach = f"Subject: Digital Optimization for {name}\n\nHello Team at {name},\n\nWe audited the {b_type.lower()} market in {loc}. Located at {address.split(',')[0]}, your current estimated review baseline is {simulated_rating} / 5.0 ({simulated_reviews} reviews).\n\nWe identified key digital capture funnels to help you outrank local competitors. Let me know if you have 5 minutes this week to discuss.\n\nBest regards,\nGrowth Engineering"
 
         data.append({
             "Business Name": name,
             "Address": address.split(',')[0] + ", " + loc,
             "Estimated Rating": f"{simulated_rating} / 5.0",
-            "Urgency Score": score,
-            "Outreach Script": outreach
+            "Urgency Score": score
         })
         
     return pd.DataFrame(data)
@@ -128,12 +124,37 @@ if 'scanned_data' in st.session_state:
     st.markdown("---")
 
     st.subheader("Step 3: Database & Results Table")
-    st.markdown("Below is the complete list of audited businesses along with their custom outreach scripts included directly in the table.")
-    
-    # Display table with the script included right inside it
-    display_df = df[['Business Name', 'Address', 'Estimated Rating', 'Urgency Score', 'Outreach Script']]
-    st.dataframe(display_df, use_container_width=True, height=450, hide_index=True)
+    display_df = df[['Business Name', 'Address', 'Estimated Rating', 'Urgency Score']]
+    st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)
     
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
+    st.markdown("---")
     
+    # Step 4: Separate AI Pitch Generator Restored
+    st.subheader("Step 4: AI Pitch Generator")
+    st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
+    
+    selected_business = st.selectbox("Select Target Business:", df['Business Name'])
+    
+    if st.button("Generate Custom AI Pitch"):
+        with st.spinner("AI is writing the pitch..."):
+            target_data = df[df['Business Name'] == selected_business].iloc[0]
+            
+            genai.configure(api_key=GEMINI_API_KEY)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            ai_prompt = f"""
+            You are a highly professional enterprise sales expert. 
+            Write a cold outreach email to {target_data['Business Name']} located at {target_data['Address']}. 
+            Their estimated digital rating is {target_data['Estimated Rating']}.
+            Offer to help them improve their local search visibility. Keep it strictly under 100 words. 
+            Do not use any emojis at all. Be direct and professional.
+            """
+            
+            try:
+                response = model.generate_content(ai_prompt)
+                st.code(response.text, language="text")
+            except Exception as e:
+                st.error("Error connecting to AI. Please check your API key.")
+                
