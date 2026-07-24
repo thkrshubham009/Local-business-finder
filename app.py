@@ -199,13 +199,24 @@ def get_verified_gemini_client():
         # Iteratively probe available models from the new SDK client listing to prevent hardcoded mismatches
         model_id = None
         try:
-            for m in client.models.list():
-                # Check if the model supports text/content generation and matches standard naming convention
-                name = getattr(m, 'name', '')
-                if 'gemini' in name and ('flash' in name or 'pro' in name):
-                    # Extract clean short model id if full resource path is returned
-                    model_id = name.split('/')[-1] if '/' in name else name
+            preferred_models = [
+                "gemini-3.6-flash",
+                "gemini-3.5-flash",
+                "gemini-3.1-flash-lite",
+                "gemini-flash-latest",
+                "gemini-2.0-flash"
+            ]
+
+            available = [m.name.split("/")[-1] for m in client.models.list()]
+
+            model_id = None
+            for model in preferred_models:
+                if model in available:
+                    model_id = model
                     break
+
+            if model_id is None:
+                raise Exception("No supported Gemini model found.")
         except Exception:
             pass
 
