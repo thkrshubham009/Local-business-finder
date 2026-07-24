@@ -159,15 +159,15 @@ if st.session_state.nav_tab == "Resources":
 # --- Gemini API Configuration (Hardcoded/Environment Fallback) ---
 def get_gemini_client():
     # Hardcode your API key below if needed, or rely on Streamlit secrets/env variables
-    api_key = "YOUR_GEMINI_API_KEY_HERE"
+    api_key = "AQ.Ab8RN6K_JB2Vf7YOBi5QiAIno10l-d9qdaz5LzKnWMdgq4CELA"
     
-    if api_key == "YOUR_GEMINI_API_KEY_HERE" or not api_key:
+    if api_key == "AQ.Ab8RN6K_JB2Vf7YOBi5QiAIno10l-d9qdaz5LzKnWMdgq4CELA" or not api_key:
         if "GEMINI_API_KEY" in st.secrets:
             api_key = st.secrets["GEMINI_API_KEY"]
         else:
             api_key = os.environ.get("GEMINI_API_KEY")
     
-    if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
+    if not api_key or api_key == "AQ.Ab8RN6K_JB2Vf7YOBi5QiAIno10l-d9qdaz5LzKnWMdgq4CELA":
         return None
         
     genai.configure(api_key=api_key)
