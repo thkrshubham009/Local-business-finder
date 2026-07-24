@@ -187,6 +187,14 @@ def get_verified_gemini_client():
             return None, None, "No compatible Gemini model is currently available. Please verify your API key, SDK version, and available models."
             
         client = genai.Client(api_key=api_key)
+        try:
+            st.write("Available models:")
+            for model in client.models.list():
+                st.write(model.name)
+            st.stop()
+        except Exception as e:
+            st.error(e)
+            st.stop()
         
         # Iteratively probe available models from the new SDK client listing to prevent hardcoded mismatches
         model_id = None
