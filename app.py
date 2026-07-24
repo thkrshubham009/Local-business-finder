@@ -9,51 +9,66 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for a clean, distraction-free UI
+# Custom CSS for a Premium, Expensive SaaS UI
 st.markdown("""
     <style>
+    /* Main Background */
     .main {
         background-color: #f8fafc;
     }
-    h1, h2, h3 {
+    
+    /* Typography */
+    h1, h2, h3, h4 {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         color: #0f172a;
         font-weight: 700;
     }
     
+    /* Premium Button Styling */
     .stButton>button {
         background-color: #0f172a;
         color: white;
         border-radius: 8px;
         padding: 0.75rem 1.5rem;
-        font-size: 1rem;
+        font-size: 1.1rem;
         font-weight: 600;
         border: none;
         width: 100%;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
     }
     .stButton>button:hover {
-        background-color: #1e293b;
+        background-color: #4f46e5;
         color: white;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
+    /* Premium Metric Numbers (Large and Indigo Blue) */
     div[data-testid="stMetricValue"] {
-        font-size: 2rem;
-        color: #0f172a;
-        font-weight: 700;
+        font-size: 2.8rem !important;
+        color: #4f46e5 !important; 
+        font-weight: 800 !important;
     }
     
-    /* Table Styling */
-    .stDataFrame {
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        background-color: #ffffff;
+    /* Metric Labels */
+    div[data-testid="stMetricLabel"] {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+    }
+    
+    /* Table Styling - Clean and Large */
+    [data-testid="stDataFrame"] {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # Main Title & Subtitle
 st.title("Local Business Intelligence Platform")
-st.markdown("Scan local markets, analyze performance, and view customized outreach scripts.")
+st.markdown("Scan local markets, analyze performance, and generate customized outreach scripts in 4 simple steps.")
 st.markdown("---")
 
 # Dropdown Options
@@ -99,14 +114,14 @@ col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
     business_type = st.selectbox(
-        "Select Industry (Click or type to search):", 
+        "Select Industry (Type to search):", 
         options=industry_options, 
         index=0
     )
     
 with col_input2:
     location = st.selectbox(
-        "Select City / Location (Click or type to search):", 
+        "Select City (Type to search):", 
         options=location_options, 
         index=0
     )
@@ -138,7 +153,7 @@ def fetch_real_google_businesses(b_type, loc, api_key):
         has_gmb = place.get("business_status") == "OPERATIONAL"
         score = 8 if user_ratings_total < 20 else (5 if rating < 4.0 else 2)
         
-        outreach = f"Subject: Digital Optimization for {name}\n\nHello Team at {name},\n\nWe audited the {b_type.lower()} market in {loc}. Located at {address}, your current review baseline is {rating} out of 5 ({user_ratings_total} reviews). We identified key digital capture funnels to help you outrank local competitors.\n\nBest regards,\nGrowth Engineering"
+        outreach = f"Subject: Digital Optimization for {name}\n\nHello Team at {name},\n\nWe audited the {b_type.lower()} market in {loc}. Located at {address}, your current review baseline is {rating} out of 5 ({user_ratings_total} reviews).\n\nWe identified key digital capture funnels to help you outrank local competitors. Let me know if you have 5 minutes this week to discuss.\n\nBest regards,\nGrowth Engineering"
 
         data.append({
             "Business Name": name,
@@ -162,7 +177,10 @@ def generate_mock_leads(b_type, loc):
         f"Metro {clean_b_type} Co.", 
         f"Prime {loc.split(',')[0]} {clean_b_type}", 
         f"Urban {clean_b_type} Group", 
-        f"Elite {clean_b_type} Partners"
+        f"Elite {clean_b_type} Partners",
+        f"Signature {clean_b_type}",
+        f"Pinnacle {clean_b_type}",
+        f"Summit {clean_b_type} Services"
     ]
     
     data = []
@@ -174,7 +192,7 @@ def generate_mock_leads(b_type, loc):
         rating_val = round(random.uniform(3.5, 4.9), 1)
         review_cnt = random.randint(15, 340)
         
-        outreach = f"Subject: Infrastructure Audit for {name}\n\nHello Leadership Team,\n\nWe conducted a digital scan of {b_type.lower()} in {loc}. {name} shows key optimization gaps in local directory capture. Implementing our modernized funnels will recapture local search market share.\n\nBest regards,\nGrowth Engineering"
+        outreach = f"Subject: Infrastructure Audit for {name}\n\nHello Leadership Team,\n\nWe conducted a digital scan of {b_type.lower()} in {loc}. {name} shows key optimization gaps in local directory capture.\n\nImplementing our modernized funnels will recapture local search market share. Are you open to a brief introductory call?\n\nBest regards,\nGrowth Engineering"
 
         data.append({
             "Business Name": name,
@@ -205,70 +223,45 @@ if generate_btn:
     col1, col2, col3 = st.columns(3)
     col1.metric("Businesses Audited", len(df))
     col2.metric("Average Urgency Score", f"{df['Urgency Score'].mean():.1f} / 10")
-    col3.metric("High-Priority Opportunities", len(df[df['Urgency Score'] >= 5]))
+    col3.metric("High-Priority Targets", len(df[df['Urgency Score'] >= 5]))
     
     st.markdown("---")
-    
-    # Market Intelligence Section
-    st.subheader("Market Leader & Demand Insights")
-    
-    top_performer = df.sort_values(by=['Rating Value', 'Review Count'], ascending=[False, False]).iloc[0]
-    avg_rating = round(df['Rating Value'].mean(), 2)
-    total_market_reviews = df['Review Count'].sum()
-    
-    col_top1, col_top2 = st.columns(2, gap="large")
-    
-    with col_top1:
-        st.markdown("**Best Performing Business:**")
-        st.info(f"Business: {top_performer['Business Name']}\n\n"
-                f"Rating: {top_performer['Rating Value']} / 5.0\n\n"
-                f"Total Customer Reviews: {top_performer['Review Count']}\n\n"
-                f"Status: Market Leader")
-        
-    with col_top2:
-        st.markdown("**Market Demand Analysis:**")
-        
-        if avg_rating >= 4.4:
-            demand_insight = f"Strong market demand with competitive providers in {location}. High opportunity to offer advanced performance tools."
-        else:
-            demand_insight = f"High demand with service gaps in {location}. Average rating is moderate ({avg_rating} / 5.0), creating opportunity for modernization."
-            
-        st.warning(f"Average Market Rating: {avg_rating} / 5.0\n\n"
-                   f"Total Market Reviews Analyzed: {total_market_reviews}\n\n"
-                   f"Analysis: {demand_insight}")
 
-    st.markdown("---")
-
-    # Step 3: Clear & Wide Results Table
-    st.subheader("Step 3: Results Table")
-    st.markdown("Below is the complete list of audited businesses and their generated scripts.")
+    # Step 3: Big Clear Results Table
+    st.subheader("Step 3: Database & Results Table")
     
-    # Clean display table configuration
-    display_df = df[['Business Name', 'Address', 'Rating', 'Listing Status', 'Urgency Score', 'Outreach Script']]
+    # Clean display table configuration - SCRIPT REMOVED FROM HERE
+    display_df = df[['Business Name', 'Address', 'Rating', 'Listing Status', 'Urgency Score']]
     
+    # Made the table big and wide
     st.dataframe(
         display_df,
         use_container_width=True,
-        hide_index=True,
-        column_config={
-            "Business Name": st.column_config.TextColumn("Business Name", width="medium"),
-            "Address": st.column_config.TextColumn("Address", width="medium"),
-            "Rating": st.column_config.TextColumn("Customer Rating", width="small"),
-            "Listing Status": st.column_config.TextColumn("Status", width="small"),
-            "Urgency Score": st.column_config.NumberColumn("Priority (1-10)", width="small"),
-            "Outreach Script": st.column_config.TextColumn("Outreach Script", width="large"),
-        }
+        height=400,
+        hide_index=True
     )
     
-    # CSV Download Button
+    # Separate CSV Download Button below the table
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="Download Table as CSV",
+        label="Download Full Data as CSV",
         data=csv_data,
         file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv",
         mime="text/csv"
     )
 
+    st.markdown("---")
+    
+    # Step 4: Outreach Script Viewer
+    st.subheader("Step 4: Generate Outreach Script")
+    st.markdown("Select a business from the dropdown below to view and copy its custom AI-generated pitch.")
+    
+    selected_business = st.selectbox("Select Target Business:", df['Business Name'])
+    
+    if selected_business:
+        script_text = df[df['Business Name'] == selected_business]['Outreach Script'].values[0]
+        st.code(script_text, language="text")
+
 else:
     st.info("Select options above and click Start Scan to begin.")
-        
+    
