@@ -21,81 +21,122 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Local Business Intelligence Platform")
-st.markdown("Scan local markets using live open-source OpenStreetMap data.")
+st.title("Global Business Intelligence Platform")
+st.markdown("Scan real-world markets globally using the live OpenStreetMap spatial database.")
 st.markdown("---")
 
 industry_options = [
-    "Cafes", "Plumbers", "Dentists", "Gyms", 
-    "Restaurants", "Bakeries", "Hotels", "Lawyers"
+    "Cafes & Coffee Shops", "Restaurants", "Hotels & Resorts", 
+    "Gyms & Fitness Centers", "Bakeries", "Dentists", "Pharmacies", "Supermarkets"
 ]
 
-location_options = [
-    "Austin", "New York", "London", 
-    "Toronto", "Sydney", "Chicago",
-    "Los Angeles", "Miami", "Paris", "Tokyo"
-]
-
-st.subheader("Step 1: Select Target Market")
+# Universal text input so you can search ANY city, town, or country in the entire world
+st.subheader("Step 1: Select Global Target Market")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
 with col_input1:
-    business_type = st.selectbox("Select Industry:", options=industry_options, index=0)
+    business_type = st.selectbox("Select Industry Category:", options=industry_options, index=0)
     
 with col_input2:
-    location = st.selectbox("Select City:", options=location_options, index=0)
+    # Free text input allows typing any city or location in the world
+    location = st.text_input("Enter Any City, State, or Country:", value="Austin, TX")
 
 with col_btn:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-    generate_btn = st.button("Start Scan")
+    generate_btn = st.button("Run Global Scan")
 st.markdown("---")
 
-def fetch_live_openstreetmap_data(b_type, loc):
-    # Query Nominatim API with structured parameters for real locations
-    url = f"https://nominatim.openstreetmap.org/search?city={loc}&q={b_type}&format=json&addressdetails=1&limit=15"
-    
-    # Nominatim strictly requires a custom User-Agent header identifying your app
-    headers = {
-        "User-Agent": "LocalBusinessIntelligenceApp/1.0 (StudentProject)"
+def fetch_global_openstreetmap_data(b_type, loc):
+    # Map friendly names to OSM tags
+    tag_mapping = {
+        "Cafes & Coffee Shops": "cafe",
+        "Restaurants": "restaurant",
+        "Hotels & Resorts": "hotel",
+        "Gyms & Fitness Centers": "gym",
+        "Bakeries": "bakery",
+        "Dentists": "dentist",
+        "Pharmacies": "pharmacy",
+        "Supermarkets": "supermarket"
     }
+    osm_tag = tag_mapping.get(b_type, "amenity")
+    
+    # Overpass API endpoint queries the global raw OSM map data directly
+    overpass_url = "https://overpass-api.de/api/interpreter"
+    
+    # Robust Overpass QL query searching for nodes and ways matching the location and tag
+    overpass_query = f"""
+    [out:json][timeout:25];
+    area[name="{loc.split(',')[0].strip()}"]->.searchArea;
+    (
+      node["amenity"="{osm_tag}"](area.searchArea);
+      way["amenity"="{osm_tag}"](area.searchArea);
+      node["shop"="{osm_tag}"](area.searchArea);
+      way["shop"="{osm_tag}"](area.searchArea);
+    );
+    out body;
+    >;
+    out skel qt;
+    """
     
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
+        response = requests.post(overpass_url, data={'data': overpass_query}, timeout=30)
+        
+        # Fallback to Nominatim search if Overpass area boundary fails for smaller towns
+        if response.status_code != 200 or not response.json().get("elements"):
+            nominatim_url = f"https://nominatim.openstreetmap.org/search?q={b_type}+in+{loc}&format=json&addressdetails=1&limit=25"
+            headers = {"User-Agent": "GlobalBusinessIntelligence/1.0"}
+            nom_response = requests.get(nominatim_url, headers=headers, timeout=15)
+            if nom_response.status_code == 200:
+                results = nom_response.json()
+                data = []
+                for place in results:
+                    name = place.get("name") or place.get("display_name", "").split(",")[0]
+                    address = place.get("display_name", "Global address mapped")
+                    data.append({
+                        "Business Name": name,
+                        "Address": address,
+                        "Estimated Rating": "OSM Verified",
+                        "Urgency Score": 6
+                    })
+                return pd.DataFrame(data)
             return pd.DataFrame()
             
-        results = response.json()
+        elements = response.json().get("elements", [])
         data = []
         
-        for place in results:
-            name = place.get("name")
+        for el in elements:
+            tags = el.get("tags", {})
+            name = tags.get("name")
             if not name:
-                # Fallback to display name prefix if specific store name is blank
-                name = place.get("display_name", "").split(",")[0]
+                continue
                 
-            address = place.get("display_name", "Address details not indexed")
+            # Build real address strings from OSM tags if available
+            street = tags.get("addr:street", "")
+            housenumber = tags.get("addr:housenumber", "")
+            city = tags.get("addr:city", loc)
             
-            # Evaluate real metadata metrics based on available attributes
+            address = f"{housenumber} {street}, {city}".strip() if street else f"Mapped location in {loc}"
+            
             data.append({
                 "Business Name": name,
                 "Address": address,
-                "Estimated Rating": "OpenData Verified",
-                "Urgency Score": 5
+                "Estimated Rating": "OSM Verified",
+                "Urgency Score": 7
             })
             
-        return pd.DataFrame(data)
+        return pd.DataFrame(data[:30]) # Limit to top 30 results for clean UI rendering
     except Exception:
         return pd.DataFrame()
 
 if generate_btn:
-    with st.spinner("Querying live OpenStreetMap spatial database..."):
-        df = fetch_live_openstreetmap_data(business_type, location)
+    with st.spinner(f"Scanning global databases for {business_type} in {location}..."):
+        df = fetch_global_openstreetmap_data(business_type, location)
         
         if df.empty:
-            st.error("No live entries found for this combination. Try broadening your city or industry choice.")
+            st.error("No entries found for this specific query. Try typing a broader region or major city name.")
             st.stop()
             
-        st.success(f"Scan Complete: Pulled live records for {location} via OpenStreetMap.")
+        st.success(f"Global Scan Complete: Found live listings for {location}.")
             
     st.session_state['scanned_data'] = df
 
@@ -104,7 +145,7 @@ if 'scanned_data' in st.session_state:
     
     st.subheader("Step 2: Market Overview")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Businesses Audited", len(df))
+    col1.metric("Global Entities Audited", len(df))
     col2.metric("Average Urgency Score", f"{df['Urgency Score'].mean():.1f} / 10")
     col3.metric("High-Priority Targets", len(df[df['Urgency Score'] >= 5]))
     st.markdown("---")
@@ -114,7 +155,7 @@ if 'scanned_data' in st.session_state:
     st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)
     
     csv_data = df.to_csv(index=False).encode('utf-8')
-    st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower()}_{location.lower()}_audit.csv", mime="text/csv")
+    st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"global_business_audit.csv", mime="text/csv")
     st.markdown("---")
     
     st.subheader("Step 4: Custom Outreach Generator")
@@ -126,13 +167,12 @@ if 'scanned_data' in st.session_state:
 
 Hi Team at {target_data['Business Name']},
 
-I was reviewing local listings located at {target_data['Address']} and noticed an opportunity to strengthen your digital reach.
+I was analyzing regional digital positioning around {target_data['Address']} and noticed an opportunity to expand your incoming client traffic.
 
-In competitive regional markets, optimizing online positioning drives consistent foot traffic. We specialize in streamlining local search footprints for active businesses.
+In fast-paced markets, optimizing local search presence yields high-converting foot traffic. We specialize in streamlining visibility metrics for active enterprises.
 
-Would you be open to a brief 10-minute chat this week?
+Would you be open to a brief 10-minute introduction this week?
 
 Best regards,
 Growth Strategist"""
         st.code(pitch_text, language="text")
-        
