@@ -206,7 +206,8 @@ if st.session_state.nav_tab == "Resources":
 
 # --- Gemini API Configuration with Caching ---
 @st.cache_resource
-py_genai_configure = lambda key: genai.configure(api_key=key)
+def py_genai_configure(key):
+    genai.configure(api_key=key)
 
 def get_gemini_client():
     try:
@@ -372,3 +373,4 @@ if st.session_state.nav_tab == "Landing":
             if st.button("Reset Profile"):
                 del st.session_state.roadmap_result
                 st.rerun()
+    
