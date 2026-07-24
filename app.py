@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Clean SaaS Styling (Fixed button visibility, text readability, and black button bug) ---
+# --- Clean SaaS Styling (Fixed button visibility, text readability, form buttons, and download button styling) ---
 st.markdown("""
     <style>
     /* Global App Background */
@@ -76,40 +76,45 @@ st.markdown("""
         color: #111827 !important;
     }
 
-    /* Buttons - Ensure text visibility, proper padding, minimum height of 48px, and crisp blue styling */
-    .stButton > button {
+    /* Universal Button Styling (Fixes black buttons and ensures white text for all button variants including Download & Submit) */
+    .stButton > button, 
+    div[data-testid="stFormSubmitButton"] > button, 
+    div[data-testid="stDownloadButton"] > button,
+    button {
         background-color: #2563EB !important;
         color: #FFFFFF !important;
         border-radius: 8px;
         font-weight: 600;
         padding: 0.6rem 1.2rem;
         min-height: 48px;
-        border: none;
+        border: none !important;
         box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         transition: background-color 0.2s ease;
         opacity: 1 !important;
         visibility: visible !important;
     }
-    .stButton > button * {
+    
+    .stButton > button *, 
+    div[data-testid="stFormSubmitButton"] > button *, 
+    div[data-testid="stDownloadButton"] > button *,
+    button * {
         color: #FFFFFF !important;
         opacity: 1 !important;
         fill: #FFFFFF !important;
     }
-    .stButton > button:hover {
+
+    .stButton > button:hover, 
+    div[data-testid="stFormSubmitButton"] > button:hover, 
+    div[data-testid="stDownloadButton"] > button:hover,
+    button:hover {
         background-color: #1D4ED8 !important;
         color: #FFFFFF !important;
     }
-    .stButton > button:hover * {
-        color: #FFFFFF !important;
-    }
-
-    /* Specific fix for Streamlit form submit button elements */
-    button[kind="secondaryFormSubmit"], button[kind="primary"], div[data-testid="stFormSubmitButton"] > button {
-        background-color: #2563EB !important;
-        color: #FFFFFF !important;
-        border: none !important;
-    }
-    div[data-testid="stFormSubmitButton"] > button * {
+    
+    .stButton > button:hover *, 
+    div[data-testid="stFormSubmitButton"] > button:hover *, 
+    div[data-testid="stDownloadButton"] > button:hover *,
+    button:hover * {
         color: #FFFFFF !important;
     }
     
@@ -178,7 +183,7 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration (Standard API Key Authentication with Current Supported Model) ---
+# --- Gemini API Configuration (Standard API Key Authentication) ---
 def get_gemini_client():
     try:
         if "GEMINI_API_KEY" not in st.secrets:
@@ -189,8 +194,7 @@ def get_gemini_client():
             return None, "Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Secrets."
             
         genai.configure(api_key=api_key)
-        # Updated to use the currently supported model identifier
-        model = genai.GenerativeModel('gemini-3.6-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         return model, None
     except Exception as e:
         return None, "The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
