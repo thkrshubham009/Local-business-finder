@@ -25,7 +25,12 @@ st.title("Global Business Intelligence Platform")
 st.markdown("Scan real-world global markets with clean address formatting and free-form input.")
 st.markdown("---")
 
-# Removed dropdown lists completely; using free text inputs for custom user needs
+# Sidebar Configuration for API Key Input
+with st.sidebar:
+    st.subheader("Configuration")
+    geoapify_api_key = st.text_input("Enter Geoapify API Key:", type="password", help="Get a free key instantly from geoapify.com")
+    st.markdown("[Get a free Geoapify API Key](https://www.geoapify.com/)")
+
 st.subheader("Step 1: Custom Search Parameters")
 col_input1, col_input2, col_btn = st.columns([2, 2, 1], gap="medium")
 
@@ -40,37 +45,47 @@ with col_btn:
     generate_btn = st.button("Run Global Scan")
 st.markdown("---")
 
-def fetch_global_businesses_with_contacts(b_type, loc):
-    # Fast Nominatim text search to resolve queries instantly without heavy timeouts
-    nominatim_url = f"https://nominatim.openstreetmap.org/search?q={b_type}+in+{loc}&format=json&addressdetails=1&extratags=1&limit=20"
-    headers = {"User-Agent": "GlobalBusinessIntelligence/1.0"}
+def fetch_global_businesses_with_contacts(b_type, loc, api_key):
+    # Using Geoapify Places API for high-speed, reliable enterprise lookups
+    url = "https://api.geoapify.com/v2/places"
+    
+    # We can use text search query parameters for flexible free-form matching
+    params = {
+        "text": f"{b_type} in {loc}",
+        "limit": 20,
+        "apiKey": api_key
+    }
+    
+    headers = {"Accept": "application/json"}
     
     try:
-        response = requests.get(nominatim_url, headers=headers, timeout=10)
+        response = requests.get(url, params=params, headers=headers, timeout=10)
         if response.status_code != 200:
             return pd.DataFrame()
             
-        results = response.json()
+        result_json = response.json()
+        features = result_json.get("features", [])
         data = []
         
-        for place in results:
-            name = place.get("name") or place.get("display_name", "").split(",")[0]
+        for place in features:
+            props = place.get("properties", {})
+            name = props.get("name") or props.get("address_line1", "Unnamed Entity")
             
             # Proper address formatting parsing structured components cleanly
-            address_details = place.get("address", {})
-            road = address_details.get("road", "")
-            house_number = address_details.get("house_number", "")
-            suburb = address_details.get("suburb", address_details.get("neighbourhood", ""))
-            city_name = address_details.get("city", address_details.get("town", address_details.get("village", loc)))
-            country_name = address_details.get("country", "")
+            housenumber = props.get("housenumber", "")
+            street = props.get("street", "")
+            suburb = props.get("suburb", props.get("neighbourhood", ""))
+            city_name = props.get("city", props.get("town", props.get("village", loc)))
+            country_name = props.get("country", "")
             
-            # Construct a clean, readable single-line address format
-            address_parts = [p for p in [f"{house_number} {road}".strip(), suburb, city_name, country_name] if p]
-            formatted_address = ", ".join(address_parts) if address_parts else place.get("display_name", "Address mapped")
+            # Construct a clean, readable single-line address format matching user layout
+            address_parts = [p for p in [f"{housenumber} {street}".strip(), suburb, city_name, country_name] if p]
+            formatted_address = ", ".join(address_parts) if address_parts else props.get("formatted", "Address mapped")
             
-            extratags = place.get("extratags", {})
-            phone = extratags.get("phone", extratags.get("contact:phone", "Not listed publicly"))
-            website = extratags.get("website", extratags.get("contact:website", "Not listed"))
+            # Contact details extraction
+            contact = props.get("contact", {})
+            phone = contact.get("phone", props.get("phone", "Not listed publicly"))
+            website = contact.get("website", props.get("website", "Not listed"))
             
             data.append({
                 "Business Name": name,
@@ -85,11 +100,15 @@ def fetch_global_businesses_with_contacts(b_type, loc):
         return pd.DataFrame()
 
 if generate_btn:
+    if not geoapify_api_key:
+        st.error("Please enter your Geoapify API key in the sidebar to run scans.")
+        st.stop()
+        
     with st.spinner(f"Querying global registries for {business_type} in {location}..."):
-        df = fetch_global_businesses_with_contacts(business_type, location)
+        df = fetch_global_businesses_with_contacts(business_type, location, geoapify_api_key)
         
         if df.empty:
-            st.error("No entries found for this location. Try a different search term.")
+            st.error("No entries found for this location or check if your API key is valid.")
             st.stop()
             
         st.success(f"Global Scan Complete: Pulled live entities for {location}.")
