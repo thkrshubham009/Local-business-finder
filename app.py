@@ -156,10 +156,9 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration (Hardcoded API Key) ---
+# --- Gemini API Configuration (Updated Hardcoded API Key) ---
 def get_gemini_client():
-    # Integrated user API key
-    api_key = "AQ.Ab8RN6K_JB2Vf7YOBi5QiAIno10l-d9qdaz5LzKnWMdgq4CELA"
+    api_key = "AQ.Ab8RN6IfmipyLGwqCHZ11-akm58yyyTg55wMF2CbjmFH5Sg7_A"
     genai.configure(api_key=api_key)
     return genai.GenerativeModel('gemini-2.5-flash')
 
