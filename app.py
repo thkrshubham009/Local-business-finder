@@ -23,7 +23,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("Local Business Intelligence Platform")
-st.markdown("Scan local markets using open-source data and generate customized AI outreach scripts.")
+st.markdown("Scan local markets using open-source data and generate customized outreach scripts.")
 st.markdown("---")
 
 industry_options = [
@@ -51,12 +51,6 @@ with col_btn:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
     generate_btn = st.button("Start Scan")
 st.markdown("---")
-
-# Pulling securely from Streamlit secrets
-try:
-    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    GEMINI_API_KEY = "AQ.Ab8RN6I8Vo6WsKXYFS84HQliVUl-qbqvGl7Po_GEa-zbCi8FrQ"
 
 def fetch_openstreetmap_businesses(b_type, loc):
     query = f"{b_type} in {loc}"
@@ -110,40 +104,28 @@ if 'scanned_data' in st.session_state:
     st.download_button(label="Download Full Data as CSV", data=csv_data, file_name=f"{business_type.lower().replace(' ', '_')}_audit.csv", mime="text/csv")
     st.markdown("---")
     
-    st.subheader("Step 4: AI Pitch Generator")
-    st.markdown("Select a business from the dropdown below to generate a custom outreach email using Google Gemini.")
+    # Step 4: Smart Pitch Generator (Guaranteed working, no keys needed)
+    st.subheader("Step 4: Custom Outreach Generator")
+    st.markdown("Select a business from the dropdown below to generate a professional outreach email.")
     
     selected_business = st.selectbox("Select Target Business:", df['Business Name'])
     
-    if st.button("Generate Custom AI Pitch"):
-        with st.spinner("AI is writing the pitch..."):
+    if st.button("Generate Custom Pitch"):
+        with st.spinner("Compiling custom outreach script..."):
             target_data = df[df['Business Name'] == selected_business].iloc[0]
-            ai_prompt = f"""
-            You are a highly professional enterprise sales expert. 
-            Write a cold outreach email to {target_data['Business Name']} located at {target_data['Address']}. 
-            Their estimated digital rating is {target_data['Estimated Rating']}.
-            Offer to help them improve their local search visibility. Keep it strictly under 100 words. 
-            Do not use any emojis at all. Be direct and professional.
-            """
             
-            # Using Vertex/Cloud Project endpoint compatible with AQ tokens via Bearer/Header authorization
-            api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-            headers = {
-                "x-goog-api-key": GEMINI_API_KEY,
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "contents": [{"parts": [{"text": ai_prompt}]}]
-            }
+            pitch_text = f"""Subject: Enhancing local visibility for {target_data['Business Name']}
+
+Hi Team at {target_data['Business Name']},
+
+I was reviewing local listings in {target_data['Address']} and noticed your current digital rating stands at {target_data['Estimated Rating']}. 
+
+In competitive local markets, optimizing your online profile can significantly drive foot traffic and customer acquisition. We specialize in helping businesses like yours streamline their digital presence and capture high-intent local search traffic.
+
+Would you be open to a brief 10-minute chat this week to review a quick breakdown of your local search ranking?
+
+Best regards,
+Growth Strategist"""
+
+            st.code(pitch_text, language="text")
             
-            try:
-                response = requests.post(api_url, headers=headers, json=payload)
-                result_json = response.json()
-                if "candidates" in result_json:
-                    pitch_text = result_json['candidates'][0]['content']['parts'][0]['text']
-                    st.code(pitch_text, language="text")
-                else:
-                    st.error(f"API Error Response: {result_json}")
-            except Exception as e:
-                st.error(f"Error connecting to AI: {e}")
-                
