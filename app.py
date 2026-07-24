@@ -153,6 +153,9 @@ st.markdown("""
 if 'nav_tab' not in st.session_state:
     st.session_state.nav_tab = "Landing"
 
+if 'show_optional' not in st.session_state:
+    st.session_state.show_optional = False
+
 def set_tab(tab_name):
     st.session_state.nav_tab = tab_name
 
@@ -172,7 +175,7 @@ with col4:
 
 st.markdown("<hr style='margin-top: 0; margin-bottom: 2rem; border-color: #334155;'>", unsafe_allow_html=True)
 
-# --- About Tab Content (Updated Developer Profile) ---
+# --- About Tab Content (Developer Profile) ---
 if st.session_state.nav_tab == "About":
     st.markdown("## About the Developer")
     st.markdown("""
@@ -204,7 +207,7 @@ if st.session_state.nav_tab == "Resources":
     st.markdown("- **Competitive Programming & Hackathons:** Global calendars for algorithmic and engineering challenges.")
     st.stop()
 
-# --- Gemini API Configuration with Caching ---
+# --- Gemini API Configuration with Caching & Latest Supported Model Fallback ---
 @st.cache_resource
 def py_genai_configure(key):
     genai.configure(api_key=key)
@@ -219,12 +222,27 @@ def get_gemini_client():
             return None, "Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Secrets."
             
         py_genai_configure(api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        return model, None
+        
+        # Try latest standard production model identifiers with safe fallbacks
+        model_candidates = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+        selected_model = None
+        
+        for model_name in model_candidates:
+            try:
+                m = genai.GenerativeModel(model_name)
+                selected_model = m
+                break
+            except Exception:
+                continue
+                
+        if not selected_model:
+            return None, "Google API Error: No compatible Gemini model is currently available for this API version."
+            
+        return selected_model, None
     except Exception:
         return None, "The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
 
-# --- AI Roadmap Generation Logic with Optimization ---
+# --- AI Roadmap Generation Logic with Evidence-Based Mentor Prompt ---
 @st.cache_data(show_spinner=False)
 def cached_generate_roadmap_text(prompt_text):
     model, err = get_gemini_client()
@@ -240,24 +258,86 @@ def cached_generate_roadmap_text(prompt_text):
     except GoogleAPICallError as g_err:
         return None, f"Google API Error: {g_err.message}"
     except Exception:
-        return None, "The configured Gemini API key is invalid or has been revoked. Generate a new key in Google AI Studio and update Streamlit Secrets."
+        return None, "Google API Error: This model is temporarily unavailable or your key lacks permissions. Please check configuration."
 
 def generate_roadmap(profile_data):
+    # Handle optional fields if empty/missing
+    for k, v in profile_data.items():
+        if not v or str(v).strip() == "":
+            profile_data[k] = "Insufficient information to evaluate this area."
+
     prompt = f"""
-    You are an expert career mentor. Based on the student profile below, generate a comprehensive career and opportunity roadmap using sections 1 through 9:
-    
-    Profile: Age {profile_data['age']}, Country {profile_data['country']}, State/Province {profile_data['state']}, City {profile_data['city']}, Education Level {profile_data['education_level']}, Current Class/Year {profile_data['current_class']}, Career Goal {profile_data['career_goal']}, Preferred Career {profile_data['preferred_career']}, Interests {profile_data['interests']}, Favourite Subjects {profile_data['favourite_subjects']}, Skills {profile_data['skills']}, Family Income {profile_data['family_income']}, Languages {profile_data['languages']}, Preferred Study Country {profile_data['preferred_country']}, Dream University {profile_data['dream_university']}, Extracurricular Activities {profile_data['extracurricular_activities']}, Certificates {profile_data['certificates']}, Projects Built {profile_data['projects_built']}, Volunteer Experience {profile_data['volunteer_experience']}, Research Experience {profile_data['research_experience']}, Olympiads {profile_data['olympiads']}, Hackathons {profile_data['hackathons']}, Leadership Experience {profile_data['leadership_experience']}, Portfolio Website {profile_data['portfolio_website']}, GitHub Profile {profile_data['github_profile']}, LinkedIn Profile {profile_data['linkedin_profile']}.
-    
-    Provide clear Markdown sections for:
-    ## Section 1: Opportunity Summary
-    ## Section 2: Scholarships
-    ## Section 3: Government Schemes
-    ## Section 4: Competitions
-    ## Section 5: Free Learning Resources
-    ## Section 6: Six-Month Roadmap
-    ## Section 7: Portfolio Suggestions
-    ## Section 8: Skill Gap Analysis
-    ## Section 9: AI Mentor Advice
+    You are an evidence-based admissions committee member, experienced career coach, and AI researcher. Your tone must be strictly objective, candid, rigorous, and direct. 
+    You must NEVER exaggerate, flatter, tell the student they are amazing, invent strengths, or make unrealistic promises. If information is missing, explicitly say: "Insufficient information to evaluate this area." Never guess.
+
+    Student Profile:
+    - Age: {profile_data['age']}
+    - Country: {profile_data['country']}
+    - State/Province: {profile_data['state']}
+    - City: {profile_data['city']}
+    - Education Level: {profile_data['education_level']}
+    - Current Class/Year: {profile_data['current_class']}
+    - Career Goal: {profile_data['career_goal']}
+    - Interests: {profile_data['interests']}
+    - Skills: {profile_data['skills']}
+    - Languages: {profile_data['languages']}
+    - Certificates: {profile_data['certificates']}
+    - Projects: {profile_data['projects']}
+    - Research: {profile_data['research']}
+    - Volunteer Experience: {profile_data['volunteer_experience']}
+    - Olympiads: {profile_data['olympiads']}
+    - Hackathons: {profile_data['hackathons']}
+    - Leadership: {profile_data['leadership']}
+    - Portfolio: {profile_data['portfolio']}
+    - GitHub: {profile_data['github']}
+    - LinkedIn: {profile_data['linkedin']}
+    - Dream University: {profile_data['dream_university']}
+    - Preferred Country: {profile_data['preferred_country']}
+    - Family Income: {profile_data['family_income']}
+    - Achievements: {profile_data['achievements']}
+    - Extracurricular Activities: {profile_data['extracurricular_activities']}
+
+    Generate a professional action plan using the exact markdown sections below:
+
+    ## Overall Assessment
+    - Give a realistic evaluation.
+    - State strengths.
+    - State weaknesses.
+    - State biggest risks.
+
+    ## Reality Check
+    - Explain how competitive the chosen career actually is.
+    - Mention acceptance rates or competition only when supported by reliable public information.
+    - Never invent numbers.
+
+    ## Skill Gap Analysis
+    - List current skills.
+    - List missing skills.
+    - List highest priority skills.
+
+    ## 12-Month Roadmap
+    - Break into months (Month 1 through Month 12).
+    - Only practical actions.
+    - No motivational language.
+
+    ## Scholarships
+    - Recommend only scholarships matching the student's country, age and profile.
+    - If none exist, clearly state that.
+
+    ## Competitions
+    - Recommend competitions that genuinely fit the profile.
+
+    ## Free Learning Resources
+    - Recommend official courses and respected platforms.
+
+    ## Projects
+    - Recommend progressively harder projects.
+
+    ## Final Verdict
+    - Summarize current competitiveness.
+    - What must improve.
+    - Estimated readiness if the roadmap is followed.
+    - No motivational ending. Only realistic conclusions.
     """
     return cached_generate_roadmap_text(prompt)
 
@@ -271,6 +351,7 @@ if st.session_state.nav_tab == "Landing":
         with st.form("profile_form"):
             st.markdown("#### Complete Your Profile")
             
+            # Required Fields (Visible Initially)
             c1, c2, c3 = st.columns(3)
             with c1:
                 age = st.text_input("Age", placeholder="Enter your age...")
@@ -278,43 +359,71 @@ if st.session_state.nav_tab == "Landing":
                 state = st.text_input("State / Province", placeholder="Enter your state or province...")
             with c2:
                 city = st.text_input("City", placeholder="Enter your city...")
-                education_level = st.text_input("Education Level", placeholder="e.g., High School, Undergraduate...")
-                current_class = st.text_input("Current Class or Year", placeholder="e.g., Grade 12, Year 2...")
+                education_level = st.text_input("Current Education Level", placeholder="e.g., High School, Undergraduate...")
+                current_class = st.text_input("Current Class / Year", placeholder="e.g., Grade 12, Year 2...")
             with c3:
                 career_goal = st.text_input("Career Goal", placeholder="e.g., AI Research Scientist...")
-                preferred_career = st.text_input("Preferred Career", placeholder="e.g., Machine Learning Engineer...")
-                languages = st.text_input("Languages (Optional)", placeholder="e.g., English, Spanish...")
-
-            c4, c5, c6 = st.columns(3)
-            with c4:
                 interests = st.text_area("Interests", placeholder="e.g., Machine Learning, Robotics...")
-                favourite_subjects = st.text_input("Favourite Subjects", placeholder="e.g., Mathematics, Physics...")
-                skills = st.text_area("Skills (Optional)", placeholder="e.g., Python, Git, Linear Algebra...")
-            with c5:
-                family_income = st.text_input("Family Income (Optional)", placeholder="Enter family income...")
-                preferred_country = st.text_input("Preferred Study Country (Optional)", placeholder="e.g., United States...")
-                dream_university = st.text_input("Dream University (Optional)", placeholder="e.g., Stanford University...")
-            with c6:
-                extracurricular_activities = st.text_area("Extracurricular Activities", placeholder="e.g., Debate Club, Model UN...")
-                certificates = st.text_area("Certificates", placeholder="e.g., AWS Certified, Coursera ML...")
-                projects_built = st.text_area("Projects Built", placeholder="e.g., Smart Attendance System...")
 
-            c7, c8, c9 = st.columns(3)
-            with c7:
-                volunteer_experience = st.text_area("Volunteer Experience", placeholder="e.g., Teaching math to kids...")
-                research_experience = st.text_area("Research Experience", placeholder="e.g., Published paper on NLP...")
-            with c8:
-                olympiads = st.text_area("Olympiads", placeholder="e.g., IMO, Physics Olympiad...")
-                hackathons = st.text_area("Hackathons", placeholder="e.g., NASA Space Apps Winner...")
-            with c9:
-                leadership_experience = st.text_area("Leadership Experience", placeholder="e.g., Student Council President...")
-                portfolio_website = st.text_input("Portfolio Website (Optional)", placeholder="https://yourportfolio.com")
-                github_profile = st.text_input("GitHub Profile (Optional)", placeholder="https://github.com/username")
-                linkedin_profile = st.text_input("LinkedIn Profile (Optional)", placeholder="https://linkedin.com/in/username")
-
-            submitted = st.form_submit_button("Generate My Roadmap")
+            submitted_main = st.form_submit_button("Generate My Roadmap")
             
-            if submitted:
+            # Optional Details Expander Toggle Button inside form flow
+            if st.form_submit_button("Optional Details ▼" if not st.session_state.show_optional else "Optional Details ▲"):
+                st.session_state.show_optional = not st.session_state.show_optional
+                st.rerun()
+
+            # Optional Details Section
+            skills = ""
+            languages = ""
+            certificates = ""
+            projects = ""
+            research = ""
+            volunteer_experience = ""
+            olympiads = ""
+            hackathons = ""
+            leadership = ""
+            portfolio = ""
+            github = ""
+            linkedin = ""
+            dream_university = ""
+            preferred_country = ""
+            family_income = ""
+            achievements = ""
+            extracurricular_activities = ""
+
+            if st.session_state.show_optional:
+                st.markdown("---")
+                st.markdown("#### Additional Optional Background")
+                
+                oc1, oc2, oc3 = st.columns(3)
+                with oc1:
+                    skills = st.text_area("Skills", placeholder="e.g., Python, Git, Linear Algebra...")
+                    languages = st.text_input("Languages", placeholder="e.g., English, Spanish...")
+                    certificates = st.text_area("Certificates", placeholder="e.g., AWS Certified, Coursera ML...")
+                    projects = st.text_area("Projects", placeholder="e.g., Smart Attendance System...")
+                with oc2:
+                    research = st.text_area("Research Experience", placeholder="e.g., Published paper on NLP...")
+                    volunteer_experience = st.text_area("Volunteer Experience", placeholder="e.g., Teaching math to kids...")
+                    olympiads = st.text_area("Olympiads", placeholder="e.g., IMO, Physics Olympiad...")
+                    hackathons = st.text_area("Hackathons", placeholder="e.g., NASA Space Apps Winner...")
+                with oc3:
+                    leadership = st.text_area("Leadership", placeholder="e.g., Student Council President...")
+                    portfolio = st.text_input("Portfolio Website", placeholder="https://yourportfolio.com")
+                    github = st.text_input("GitHub Profile", placeholder="https://github.com/username")
+                    linkedin = st.text_input("LinkedIn Profile", placeholder="https://linkedin.com/in/username")
+
+                oc4, oc5, oc6 = st.columns(3)
+                with oc4:
+                    dream_university = st.text_input("Dream University", placeholder="e.g., Stanford University...")
+                with oc5:
+                    preferred_country = st.text_input("Preferred Country", placeholder="e.g., United States...")
+                with oc6:
+                    family_income = st.text_input("Family Income", placeholder="Enter family income...")
+
+                achievements = st.text_area("Achievements", placeholder="List notable awards or milestones...")
+                extracurricular_activities = st.text_area("Extracurricular Activities", placeholder="e.g., Debate Club, Model UN...")
+
+            if submitted_main:
                 profile_data = {
                     "age": age, 
                     "country": country, 
@@ -323,28 +432,27 @@ if st.session_state.nav_tab == "Landing":
                     "education_level": education_level, 
                     "current_class": current_class,
                     "career_goal": career_goal, 
-                    "preferred_career": preferred_career,
-                    "interests": interests, 
-                    "favourite_subjects": favourite_subjects,
+                    "interests": interests,
                     "skills": skills,
-                    "family_income": family_income, 
                     "languages": languages,
-                    "preferred_country": preferred_country, 
-                    "dream_university": dream_university,
-                    "extracurricular_activities": extracurricular_activities,
                     "certificates": certificates,
-                    "projects_built": projects_built,
+                    "projects": projects,
+                    "research": research,
                     "volunteer_experience": volunteer_experience,
-                    "research_experience": research_experience,
                     "olympiads": olympiads,
                     "hackathons": hackathons,
-                    "leadership_experience": leadership_experience,
-                    "portfolio_website": portfolio_website,
-                    "github_profile": github_profile,
-                    "linkedin_profile": linkedin_profile
+                    "leadership": leadership,
+                    "portfolio": portfolio,
+                    "github": github,
+                    "linkedin": linkedin,
+                    "dream_university": dream_university,
+                    "preferred_country": preferred_country,
+                    "family_income": family_income,
+                    "achievements": achievements,
+                    "extracurricular_activities": extracurricular_activities
                 }
                 
-                with st.spinner("Analyzing profile and generating your personalized roadmap..."):
+                with st.spinner("Analyzing profile and generating rigorous evidence-based roadmap..."):
                     result, err_msg = generate_roadmap(profile_data)
                     if result:
                         st.session_state.roadmap_result = result
@@ -372,5 +480,5 @@ if st.session_state.nav_tab == "Landing":
         with col_dl2:
             if st.button("Reset Profile"):
                 del st.session_state.roadmap_result
+                st.session_state.show_optional = False
                 st.rerun()
-    
